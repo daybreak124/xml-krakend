@@ -4,7 +4,7 @@ max rate: global max rate limit
 client max rate: client için max rate limit
 
 ##
-Universal SOAP controller ve SoapInvoker dinamik olarak, ayrı ayrı sınıf eklenmeden 
+Universal SOAP controller ve SoapInvoker dinamik olarak, ayrı ayrı endpoint ayarlamadan 
 API erişimi sağlar
 ##
 
