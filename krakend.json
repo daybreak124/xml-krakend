@@ -1,0 +1,256 @@
+{
+  "version": 3,
+  "name": "SOAP-REST Gateway",
+  "port": 8081,
+  "timeout": "5s",
+  "extra_config": {
+
+    "security/cors": {
+      "allow_origins": [
+        "*"
+      ],
+      "allow_methods": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "expose_headers": [
+        "Content-Length",
+        "Content-Type"
+      ],
+      "allow_headers": [
+        "Accept-Language"
+      ],
+      "max_age": "12h",
+      "allow_credentials": false,
+      "debug": false
+    },
+
+
+    "security/bot-detector": {
+      "allow": ["Bypass/1.0"],
+      "deny": [],
+      "patterns": [ "(Pingdom.com_bot_version_).*",
+        "(facebookexternalhit)/.*"
+      ],
+      "cache_size": 10000,
+      "empty_user_agent_is_bot": true
+    },
+    "telemetry/logging": {
+      "level": "DEBUG",
+      "prefix": "[KRAKEND]",
+      "syslog": true,
+      "stdout": true
+    }
+  },
+
+
+
+  "endpoints": [
+    {
+      "endpoint": "/global/{service}/{operation}/{param}",
+      "@comment": "GLOBAL endpoint. Hem sayı hem country için",
+      "output_encoding": "xml",
+      "method": "GET",
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "max_rate": 10000,
+          "every": "10m",
+          "client_max_rate": 2500,
+          "strategy": "ip"
+        },
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "role",
+          "roles": ["admin", "user"]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/universal/{service}/{operation}/{param}",
+          "method": "GET",
+          "encoding": "xml",
+          "host": ["http://host.docker.internal:8080"],
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            }
+          }
+        }
+      ]
+    },
+
+
+    {
+      "endpoint": "/global/aggregate/{service1}/{operation1}/{param1}/{service2}/{operation2}/{param2}",
+      "@comment": "",
+      "method": "GET",
+      "output_encoding": "xml",
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "max_rate": 10000,
+          "every": "10m",
+          "client_max_rate": 2500,
+          "strategy": "ip"
+        },
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "role",
+          "roles": ["admin", "user"]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/universal/{service1}/{operation1}/{param1}",
+          "method": "GET",
+          "encoding": "xml",
+          "host": ["http://host.docker.internal:8080"],
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            }
+          }
+        },
+        {
+          "url_pattern": "/universal/{service2}/{operation2}/{param2}",
+          "method": "GET",
+          "encoding": "xml",
+          "host": ["http://host.docker.internal:8080"],
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            }
+          }
+        }
+      ]
+    },
+
+
+
+
+    {
+      "endpoint": "/single/country/{code}",
+      "@comment": "Endpointi backendde belirlenmiş spesifik api için. Hızlı",
+      "output_encoding": "xml",
+      "method": "GET",
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "max_rate": 10000,
+          "every": "10m",
+          "client_max_rate": 2500,
+          "strategy": "ip"
+        },
+
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "role",
+          "roles": ["admin"]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/countries/{code}/full",
+          "method": "GET",
+          "encoding": "xml",
+          "host": ["http://host.docker.internal:8080"],
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            }
+          }
+        }
+      ]
+    },
+
+
+    {
+      "endpoint": "/single/number/{code}",
+      "@comment": "Endpointi backendde belirlenmiş spesifik api için. Hızlı",
+      "method": "GET",
+      "output_encoding": "xml",
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "max_rate": 10000,
+          "every": "10m",
+          "client_max_rate": 2500,
+          "strategy": "ip"
+        },
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "role",
+          "roles": ["admin", "user"]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/numbers/{code}",
+          "method": "GET",
+          "encoding": "xml",
+          "host": ["http://host.docker.internal:8080"],
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            }
+          }
+        }
+      ]
+    },
+
+
+
+    {
+      "endpoint": "/single/aggregate/{country}/{number}",
+      "@comment": "Single aggregate",
+      "method": "GET",
+      "output_encoding": "xml",
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "max_rate": 10000,
+          "every": "10m",
+          "client_max_rate": 2500,
+          "strategy": "ip"
+        },
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "role",
+          "roles": ["admin", "user"]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/numbers/{number}",
+          "method": "GET",
+          "encoding": "xml",
+          "host": ["http://host.docker.internal:8080"],
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            }
+          }
+        },
+
+        {
+          "url_pattern": "/countries/{country}/full",
+          "method": "GET",
+          "encoding": "xml",
+          "host": ["http://host.docker.internal:8080"],
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "keys": [
+    {
+      "kty": "oct",
+      "k": "nVmlOnbi4DrkBHewkH95FvVYAmtpW2jkU706VYCcQAoObFb_icStV9mbepsr6fFc",
+      "alg": "HS384",
+      "use": "sig",
+      "kid": "xml-project"
+    }
+  ]
+}
