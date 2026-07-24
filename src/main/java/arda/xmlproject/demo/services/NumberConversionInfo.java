@@ -1,4 +1,4 @@
-package arda.xmlproject.demo.service;
+package arda.xmlproject.demo.services;
 
 import com.dataaccess.webservicesserver.NumberConversion;
 import com.dataaccess.webservicesserver.NumberConversionSoapType;

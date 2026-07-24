@@ -1,4 +1,4 @@
-package arda.xmlproject.demo.service;
+package arda.xmlproject.demo.services;
 
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -24,10 +24,19 @@ public class SoapInvoker {
 
     public Object invoke(String serviceName, String operation, String param) throws Exception {
         Object port = getPort(serviceName);
-        Method method = findMethod(port, operation);
+        Method method = findMethod(port, operation, 1);
         Object convertedParam = convertParam(method.getParameterTypes()[0], param);
 
         return method.invoke(port, convertedParam);
+    }
+
+    public Object invokeTwoParameters(String serviceName, String operation, String param1, String param2) throws Exception {
+        Object port = getPort(serviceName);
+        Method method = findMethod(port, operation, 2);
+        Object convertedParam1 = convertParam(method.getParameterTypes()[0], param1);
+        Object convertedParam2 = convertParam(method.getParameterTypes()[1], param2);
+
+        return method.invoke(port, convertedParam1, convertedParam2);
     }
 
     // Number converter BigInt veya integer istiyor
@@ -65,7 +74,7 @@ public class SoapInvoker {
         // Class.forName string ile metotu bulur
         Class<?> serviceClass = Class.forName(serviceClassName);
 
-        // API servisinin yeni instance'ını oluşturur. NumberConversion service = new...
+        // API servisinin yeni instance'ını oluşturur. NumberConversion services = new...
         Object serviceInstance = serviceClass.getConstructor(URL.class).newInstance(new URL(wsdlUrl));
 
         // getNumberConversionSoap veya getCountryInfoServiceSoap gibi port döndüren metot bul
@@ -80,9 +89,9 @@ public class SoapInvoker {
         return port;
     }
 
-    private Method findMethod(Object port, String operation) throws NoSuchMethodException {
+    private Method findMethod(Object port, String operation, int paramCount) throws NoSuchMethodException {
         for (Method m : port.getClass().getMethods()) {
-            if (m.getName().equalsIgnoreCase(operation) && m.getParameterCount() == 1) {
+            if (m.getName().equalsIgnoreCase(operation) && m.getParameterCount() == paramCount) {
                 return m;
             }
         }

@@ -5,6 +5,15 @@
   "timeout": "5s",
   "extra_config": {
 
+    "telemetry/metrics": {
+      "collection_time": "30s",
+      "proxy_disabled": false,
+      "router_disabled": false,
+      "backend_disabled": false,
+      "endpoint_disabled": false,
+      "listen_address": ":8082"
+    },
+
     "security/cors": {
       "allow_origins": [
         "*"
@@ -25,12 +34,13 @@
       "allow_credentials": false,
       "debug": false
     },
-
-
     "security/bot-detector": {
-      "allow": ["Bypass/1.0"],
+      "allow": [
+        "Bypass/1.0"
+      ],
       "deny": [],
-      "patterns": [ "(Pingdom.com_bot_version_).*",
+      "patterns": [
+        "(Pingdom.com_bot_version_).*",
         "(facebookexternalhit)/.*"
       ],
       "cache_size": 10000,
@@ -43,15 +53,15 @@
       "stdout": true
     }
   },
-
-
-
   "endpoints": [
     {
       "endpoint": "/global/{service}/{operation}/{param}",
       "@comment": "GLOBAL endpoint. Hem sayı hem country için",
       "output_encoding": "xml",
       "method": "GET",
+      "input_headers": [
+        "id-header"
+      ],
       "extra_config": {
         "qos/ratelimit/router": {
           "max_rate": 10000,
@@ -63,8 +73,19 @@
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
-          "roles_key": "role",
-          "roles": ["admin", "user"]
+          "roles_key": "roles",
+          "roles": [
+            "admin"
+          ],
+          "propagate_claims": [
+            [
+              "id",
+              "id-header"
+            ]
+          ]
+        },
+        "modifier/lua-proxy": {
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/global/{service}/{operation}/{param}');"
         }
       },
       "backend": [
@@ -72,7 +93,9 @@
           "url_pattern": "/universal/{service}/{operation}/{param}",
           "method": "GET",
           "encoding": "xml",
-          "host": ["http://host.docker.internal:8080"],
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
           "extra_config": {
             "qos/http-cache": {
               "shared": true
@@ -81,13 +104,14 @@
         }
       ]
     },
-
-
     {
-      "endpoint": "/global/aggregate/{service1}/{operation1}/{param1}/{service2}/{operation2}/{param2}",
-      "@comment": "",
-      "method": "GET",
+      "endpoint": "/globaldouble/{service}/{operation}/{param1}/{param2}",
+      "@comment": "GLOBAL endpoint. Çift parametreliler için",
       "output_encoding": "xml",
+      "method": "GET",
+      "input_headers": [
+        "id-header"
+      ],
       "extra_config": {
         "qos/ratelimit/router": {
           "max_rate": 10000,
@@ -99,8 +123,69 @@
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
-          "roles_key": "role",
-          "roles": ["admin", "user"]
+          "roles_key": "roles",
+          "roles": [
+            "admin"
+          ],
+          "propagate_claims": [
+            [
+              "id",
+              "id-header"
+            ]
+          ]
+        },
+        "modifier/lua-proxy": {
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/globaldouble/{service}/{operation}/{param1}/{param2}');"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/universal/{service}/{operation}/{param1}/{param2}",
+          "method": "GET",
+          "encoding": "xml",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/global/aggregate/{service1}/{operation1}/{param1}/{service2}/{operation2}/{param2}",
+      "@comment": "",
+      "method": "GET",
+      "output_encoding": "xml",
+      "input_headers": [
+        "id-header"
+      ],
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "max_rate": 10000,
+          "every": "10m",
+          "client_max_rate": 2500,
+          "strategy": "ip"
+        },
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": [
+            "admin"
+          ],
+          "propagate_claims": [
+            [
+              "id",
+              "id-header"
+            ]
+          ]
+        },
+        "modifier/lua-proxy": {
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/global/aggregate/{service1}/{operation1}/{param1}/{service2}/{operation2}/{param2}');"
         }
       },
       "backend": [
@@ -108,7 +193,9 @@
           "url_pattern": "/universal/{service1}/{operation1}/{param1}",
           "method": "GET",
           "encoding": "xml",
-          "host": ["http://host.docker.internal:8080"],
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
           "extra_config": {
             "qos/http-cache": {
               "shared": true
@@ -119,7 +206,9 @@
           "url_pattern": "/universal/{service2}/{operation2}/{param2}",
           "method": "GET",
           "encoding": "xml",
-          "host": ["http://host.docker.internal:8080"],
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
           "extra_config": {
             "qos/http-cache": {
               "shared": true
@@ -128,15 +217,14 @@
         }
       ]
     },
-
-
-
-
     {
       "endpoint": "/single/country/{code}",
       "@comment": "Endpointi backendde belirlenmiş spesifik api için. Hızlı",
       "output_encoding": "xml",
       "method": "GET",
+      "input_headers": [
+        "id-header"
+      ],
       "extra_config": {
         "qos/ratelimit/router": {
           "max_rate": 10000,
@@ -144,13 +232,23 @@
           "client_max_rate": 2500,
           "strategy": "ip"
         },
-
         "auth/validator": {
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
-          "roles_key": "role",
-          "roles": ["admin"]
+          "roles_key": "roles",
+          "roles": [
+            "country"
+          ],
+          "propagate_claims": [
+            [
+              "id",
+              "id-header"
+            ]
+          ]
+        },
+        "modifier/lua-proxy": {
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/country/{code}');"
         }
       },
       "backend": [
@@ -158,7 +256,9 @@
           "url_pattern": "/countries/{code}/full",
           "method": "GET",
           "encoding": "xml",
-          "host": ["http://host.docker.internal:8080"],
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
           "extra_config": {
             "qos/http-cache": {
               "shared": true
@@ -167,13 +267,14 @@
         }
       ]
     },
-
-
     {
       "endpoint": "/single/number/{code}",
       "@comment": "Endpointi backendde belirlenmiş spesifik api için. Hızlı",
       "method": "GET",
       "output_encoding": "xml",
+      "input_headers": [
+        "id-header"
+      ],
       "extra_config": {
         "qos/ratelimit/router": {
           "max_rate": 10000,
@@ -185,8 +286,19 @@
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
-          "roles_key": "role",
-          "roles": ["admin", "user"]
+          "roles_key": "roles",
+          "roles": [
+            "number"
+          ],
+          "propagate_claims": [
+            [
+              "id",
+              "id-header"
+            ]
+          ]
+        },
+        "modifier/lua-proxy": {
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/number/{code}');"
         }
       },
       "backend": [
@@ -194,7 +306,9 @@
           "url_pattern": "/numbers/{code}",
           "method": "GET",
           "encoding": "xml",
-          "host": ["http://host.docker.internal:8080"],
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
           "extra_config": {
             "qos/http-cache": {
               "shared": true
@@ -203,14 +317,14 @@
         }
       ]
     },
-
-
-
     {
       "endpoint": "/single/aggregate/{country}/{number}",
       "@comment": "Single aggregate",
       "method": "GET",
       "output_encoding": "xml",
+      "input_headers": [
+        "id-header"
+      ],
       "extra_config": {
         "qos/ratelimit/router": {
           "max_rate": 10000,
@@ -222,8 +336,19 @@
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
-          "roles_key": "role",
-          "roles": ["admin", "user"]
+          "roles_key": "roles",
+          "roles": [
+            "admin"
+          ],
+          "propagate_claims": [
+            [
+              "id",
+              "id-header"
+            ]
+          ]
+        },
+        "modifier/lua-proxy": {
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/aggregate/{country}/{number}');"
         }
       },
       "backend": [
@@ -231,19 +356,22 @@
           "url_pattern": "/numbers/{number}",
           "method": "GET",
           "encoding": "xml",
-          "host": ["http://host.docker.internal:8080"],
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
           "extra_config": {
             "qos/http-cache": {
               "shared": true
             }
           }
         },
-
         {
           "url_pattern": "/countries/{country}/full",
           "method": "GET",
           "encoding": "xml",
-          "host": ["http://host.docker.internal:8080"],
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
           "extra_config": {
             "qos/http-cache": {
               "shared": true

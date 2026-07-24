@@ -70,6 +70,24 @@ dependencies {
 
     implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
 
+    // Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
+    compileOnly 'org.projectlombok:lombok:1.18.38'
+    annotationProcessor 'org.projectlombok:lombok:1.18.38'
+    testCompileOnly 'org.projectlombok:lombok:1.18.38'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.38'
+
+    // Source: https://mvnrepository.com/artifact/org.springframework/spring-orm
+    implementation("org.springframework:spring-orm:7.0.8")
+
+    // Source: https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa
+    implementation("org.springframework.data:spring-data-jpa:4.1.0")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
+    // Source: https://mvnrepository.com/artifact/mysql/mysql-connector-java
+    implementation("mysql:mysql-connector-java:8.0.33")
+
+    // Source: https://mvnrepository.com/artifact/org.modelmapper/modelmapper
+    implementation("org.modelmapper:modelmapper:3.2.6")
 
 }
 

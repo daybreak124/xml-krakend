@@ -1,4 +1,4 @@
-package arda.xmlproject.demo.service;
+package arda.xmlproject.demo.services;
 
 import org.oorsprong.websamples.TCountryInfo;
 import org.oorsprong.websamples_countryinfo.CountryInfoService;

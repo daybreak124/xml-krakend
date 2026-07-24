@@ -1,6 +1,6 @@
 package arda.xmlproject.demo.controller;
 
-import arda.xmlproject.demo.service.NumberConversionInfo;
+import arda.xmlproject.demo.services.NumberConversionInfo;
 import com.dataaccess.webservicesserver.NumberToWordsResponse;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import org.springframework.http.CacheControl;
