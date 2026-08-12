@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="css/styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SOAP-Krakend</title>
+    <style>
+        .container { max-width: 1000px; margin: auto; background: #2c2c2c; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.8); color: #e0e0e0; }
+
+        h1 { color: #ffffff; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; margin-top: 0; }
+        h2 { color: #cfcfcf; margin-top: 20px; font-size: 18px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        h3 { margin: 0 0 10px 0; color: #cfcfcf; }
+
+        .section { margin: 15px 0; padding: 15px; background: #3a3a3a; border-radius: 6px; border: 1px solid #444; }
+
+        input, select { background: #1e1e1e; color: #e0e0e0; border: 1px solid #555; }
+        input:focus, select:focus { border-color: #4CAF50; }
+        input::placeholder { color: #888; }
+        input:disabled { opacity: 0.6; cursor: not-allowed; border-color: #444; color: #888; }
+
+        button.outline { background: transparent; color: #e0e0e0; border: 1px solid #555; }
+        button.outline:hover { background: #444; }
+
+        .token-box { background: #1e1e1e; padding: 10px; border-radius: 4px; font-size: 12px; font-family: monospace; color: #d4d4d4; }
+
+        .note { background: #383a22; padding: 10px 15px; border-radius: 4px; border-left: 4px solid #ffc107; margin: 10px 0; color: #e0e0e0; }
+
+        table th { background: #333; color: #e0e0e0; border-bottom: 1px solid #444; }
+        table td { border-bottom: 1px solid #444; }
+        tr:hover { background: #3a3a3a; }
+
+        .status { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+        .status.ok { color: #c8e6c9; background: #1b5e20; }
+        .status.err { color: #ffcdd2; background: #b71c1c; }
+        .status.warning { color: #ffecb3; background: #e65100; }
+        .status.info { color: #bbdefb; background: #0d47a1; }
+
+        .pill.success { background: #1b5e20; color: #c8e6c9; }
+        .pill.danger { background: #b71c1c; color: #ffcdd2; }
+
+        .user-badge-area { text-align: right; font-size: 14px; color: #cfcfcf; }
+
+        /* --- GERİ KALAN TÜM CSS AYNEN KALDI --- */
+        * { box-sizing: border-box; }
+        .flex { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .flex-col { display: flex; flex-direction: column; gap: 8px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        input, select, button { padding: 8px 12px; border-radius: 4px; font-size: 14px; }
+        button { background: #4CAF50; color: white; border: none; cursor: pointer; transition: all 0.2s; }
+        button:hover { opacity: 0.85; transform: scale(1.02); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        button.danger { background: #f44336; }
+        button.danger:hover { background: #d32f2f; }
+        button.info { background: #2196F3; }
+        button.info:hover { background: #1976D2; }
+        button.warning { background: #FF9800; }
+        button.warning:hover { background: #F57C00; }
+        button.success { background: #4CAF50; }
+        button.purple { background: #9C27B0; }
+        button.purple:hover { background: #7B1FA2; }
+        pre {
+        background: #0d0d0d;
+        color: #d4d4d4;
+        padding: 15px;
+        border-radius: 4px;
+        overflow-x: auto;
+        max-height: 400px;
+        font-size: 12px;
+        font-family: 'Consolas',
+        monospace; margin:
+        10px 0 0 0;
+        resize: both;
+        }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge.auth { background: #4CAF50; color: white; }
+        .badge.api { background: #FF9800; color: white; }
+        .badge.admin { background: #9C27B0; color: white; }
+        .badge.user { background: #2196F3; color: white; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .checkbox-group label { display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; color: #e0e0e0; }
+        .checkbox-group input[type="checkbox"] { width: 16px; height: 16px; margin: 0; }
+        .fold-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 4px 0; }
+        .fold-header:hover { opacity: 0.8; }
+        .fold-icon { font-size: 18px; transition: transform 0.2s; display: inline-block; }
+        .fold-icon.closed { transform: rotate(-90deg); }
+        .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .edit-grid .full-width { grid-column: 1 / -1; }
+        @media (max-width: 600px) { .edit-grid { grid-template-columns: 1fr; } .edit-grid .full-width { grid-column: 1; } }
+        .hidden { display: none !important; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .mt-10 { margin-top: 10px; }
+        .mb-10 { margin-bottom: 10px; }
+        .text-center { text-align: center; }
+        .text-muted { color: #888; font-size: 13px; }
+        .w-100 { width: 100%; }
+        @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+        .role-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .role-tag.admin { background: #9C27B0; color: white; }
+        .role-tag.user { background: #2196F3; color: white; }
+        .perm-tag { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; margin: 1px; }
+        .perm-tag.COUNTRY { background: #4CAF50; color: white; }
+        .perm-tag.NUMBER { background: #FF9800; color: white; }
+        .perm-tag.TEMPERATURE { background: #f44336; color: white; }
+        .perm-tag.ISBN { background: #9C27B0; color: white; }
+        .perm-tag.CALCULATOR { background: #2196F3; color: white; }
+        .perm-tag.USER { background: #2196F3; color: white; }
+        .perm-tag.PRODUCTS { background: #4CAF50; color: white; }
+        .perm-tag.USER_ADM { background: #0d47a1; color: white; }
+        .perm-tag.PRODUCTS_ADM { background: #1b5e20; color: white; }
+        .perm-tag.PRODUCTS_DEL { background: #b71c1c; color: white; }
+        .perm-tag.PRODUCTS_PATCH { background: #e65100; color: white; }
+        .perm-tag.PRODUCTS_POST { background: #558b2f; color: white; }
+        .perm-tag.PRODUCTS_GET { background: #6a1b9a; color: white; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="flex-between">
+        <h1>🔐 SOAP-Krakend</h1>
+        <div class="user-badge-area" id="userBadge"></div>
+    </div>
+
+    <div class="note">
+        <strong>📡 API:</strong> <strong>8081</strong> (Krakend) &nbsp;|&nbsp;
+        <strong>🔑 Auth:</strong> <strong>8081</strong> (Krakend) &nbsp;|&nbsp;
+        <span id="statusBadge"><span class="pill success">● Çalışıyor</span></span>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- GİRİŞ / KAYIT -->
+    <!-- ============================================================ -->
+    <div class="grid-2">
+        <div class="section">
+            <h3>🔐 Giriş Yap</h3>
+            <div class="flex-col">
+                <input type="text" id="loginUsername" placeholder="Kullanıcı adı" />
+                <input type="password" id="loginPassword" placeholder="Şifre" />
+                <div class="flex">
+                    <button id="loginBtn" class="info">Giriş Yap</button>
+                    <button id="logoutBtn" class="danger">Çıkış Yap</button>
+                </div>
+                <div id="loginStatus"></div>
+                <div id="tokenDisplay" class="token-box hidden"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>📝 Kayıt Ol</h3>
+            <div class="flex-col">
+                <input type="text" id="regUsername" placeholder="Kullanıcı adı *" />
+                <input type="password" id="regPassword" placeholder="Şifre *" />
+                <input type="text" id="regIdentity" placeholder="Kimlik No *" />
+                <input type="text" id="regName" placeholder="Ad" />
+                <input type="text" id="regLastName" placeholder="Soyad" />
+                <button id="registerBtn" class="warning">Kayıt Ol</button>
+                <div id="registerStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- API TEST (FOLD'lu) -->
+    <!-- ============================================================ -->
+    <div id="apiSection" class="section hidden">
+        <div class="fold-header" onclick="toggleFold('apiFold')">
+            <h3 style="margin:0;">📡 API Çağrısı</h3>
+            <span class="fold-icon" id="apiFoldIcon">▼</span>
+        </div>
+        <div id="apiFold">
+            <div class="flex">
+                <select id="methodSelect" style="min-width:100px; background:#1e1e1e; color:#e0e0e0; border:1px solid #555; padding:8px 12px; border-radius:4px;">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                </select>
+
+                <select id="endpointSelect" style="min-width:250px;">
+                    <option value="/single/country/TR">/single/country/TR</option>
+                    <option value="/single/number/15">/single/number/15</option>
+                    <option value="/global/number/numberToWords/15">/global/number/numberToWords/15</option>
+                    <option value="/global/country/fullCountryInfo/TR">/global/country/fullCountryInfo/TR</option>
+                    <option value="/single/aggregate/TR/15">/single/aggregate/TR/15</option>
+                    <option value="/api/users-products/2/xml">/api/users-products/2/xml</option>
+                </select>
+                <input type="text" id="customEndpoint" placeholder="Veya özel endpoint" style="flex:1; min-width:150px;" />
+                <button id="callApiBtn" class="info">🚀 Gönder</button>
+                <button id="refreshBtn" class="warning">🔄 Refresh Token</button>
+
+                <!-- Dinamik alan konteyneri -->
+                <div id="fieldsFilterArea" class="checkbox-group mt-10 hidden"></div>
+            </div>
+            <div id="apiStatus" class="mt-10"></div>
+            <pre id="apiResponse" style="white-space: pre-wrap; word-break: break-word;">Cevap burada görünecek...</pre>
+            <div id="refreshStatus" class="mt-10"></div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ÜRÜNLER (herkes görüntüler, admin ekler/düzenler/siler) -->
+    <!-- ============================================================ -->
+    <div id="productsSection" class="section hidden">
+        <div class="fold-header" onclick="toggleFold('productsFold')">
+            <h3 style="margin:0;">📦 Ürünler</h3>
+            <div>
+                <span id="productListStatus" style="font-weight:normal;font-size:13px;margin-right:10px;"></span>
+                <span class="fold-icon" id="productsFoldIcon">▼</span>
+            </div>
+        </div>
+        <div id="productsFold">
+            <div class="flex" style="margin-bottom:10px;">
+                <button id="listProductsBtn" class="info">📋 Listele</button>
+            </div>
+            <div id="productTableContainer" class="hidden mt-10">
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ürün Adı</th>
+                            <th>Kategori</th>
+                            <th>Fiyat</th>
+                            <th>Stok</th>
+                            <th>SKU</th>
+                            <th>Marka</th>
+                            <th>Aktif</th>
+                            <th id="productActionsHeader" class="hidden">İşlem</th>
+                        </tr>
+                        </thead>
+                        <tbody id="productTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sadece ADMIN görür: ürün ekle/düzenle -->
+            <div id="productAddEditPanel" class="hidden mt-10">
+                <h3 style="margin-top:20px;">✏️ Ürün Ekle / Düzenle</h3>
+                <div class="edit-grid">
+                    <input type="number" id="prodId" placeholder="Düzenlenecek ID (boş = yeni ürün)" />
+                    <input type="text" id="prodName" placeholder="Ürün Adı *" />
+                    <input type="text" id="prodCategory" placeholder="Kategori" />
+                    <input type="number" step="0.01" id="prodPrice" placeholder="Fiyat" />
+                    <input type="number" id="prodStock" placeholder="Stok Miktarı" />
+                    <input type="text" id="prodSku" placeholder="SKU" />
+                    <input type="text" id="prodBrand" placeholder="Marka" />
+                    <input type="text" id="prodDescription" class="full-width" placeholder="Açıklama" />
+                    <div class="full-width checkbox-group">
+                        <label><input type="checkbox" id="prodActive" checked /> Aktif</label>
+                    </div>
+                    <div class="full-width flex">
+                        <button id="saveProductBtn" class="success">💾 Kaydet</button>
+                        <button id="deleteProductBtn" class="danger">🗑️ Sil</button>
+                        <button id="clearProductBtn" class="info">Temizle</button>
+                    </div>
+                </div>
+                <div id="productEditStatus" class="mt-10"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- GRAFANA METRİKLERİ -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h3>📊 KrakenD Metrikleri</h3>
+        <iframe
+                src="http://localhost:3000/d-solo/adj4vc9/new-dashboard?orgId=1&from=1785999888323&to=1786021488323&timezone=browser&panelId=panel-1"
+                width="100%"
+                height="400"
+                frameborder="0"
+                style="border-radius:6px;">
+        </iframe>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- ADMIN PANELİ (FOLD'lu) -->
+    <!-- ============================================================ -->
+    <div id="adminPanel" class="hidden">
+        <h2>🛠️ Admin Paneli</h2>
+
+        <!-- Kullanıcı Listesi (FOLD'lu) -->
+        <div class="section">
+            <div class="fold-header" onclick="toggleFold('listFold')">
+                <h3 style="margin:0;">👥 Kullanıcılar</h3>
+                <div>
+                    <span id="userListStatus" style="font-weight:normal;font-size:13px;margin-right:10px;"></span>
+                    <span class="fold-icon" id="listFoldIcon">▼</span>
+                </div>
+            </div>
+            <div id="listFold">
+                <div class="flex" style="margin-bottom:10px;">
+                    <button id="listUsersBtn" class="info">📋 Listele</button>
+                </div>
+                <div id="userTableContainer" class="hidden mt-10">
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Kullanıcı</th>
+                                <th>Kimlik No</th>
+                                <th>Ad</th>
+                                <th>Soyad</th>
+                                <th>Rol</th>
+                                <th>Yetkiler</th>
+                                <th>İşlem</th>
+                            </tr>
+                            </thead>
+                            <tbody id="userTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kullanıcı Düzenleme (FOLD'lu + alt alta) -->
+        <div class="section">
+            <div class="fold-header" onclick="toggleFold('editFold')">
+                <h3 style="margin:0;">✏️ Kullanıcı Düzenle</h3>
+                <span class="fold-icon" id="editFoldIcon">▼</span>
+            </div>
+            <div id="editFold">
+                <div class="edit-grid">
+                    <input type="number" id="editUserId" placeholder="Düzenlenecek ID" />
+                    <input type="text" id="editUsername" placeholder="Kullanıcı adı" />
+                    <input type="password" id="editPassword" placeholder="Yeni Şifre" />
+                    <input type="text" id="editIdentity" placeholder="Kimlik No" />
+                    <input type="text" id="editName" placeholder="Ad" />
+                    <input type="text" id="editLastName" placeholder="Soyad" />
+                    <select id="editRole">
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                    <div class="full-width checkbox-group">
+                        <label style="width:100%;font-weight:bold;margin-bottom:4px;">Yetkiler:</label>
+                        <label><input type="checkbox" class="perm-check" value="COUNTRY" /> COUNTRY</label>
+                        <label><input type="checkbox" class="perm-check" value="NUMBER" /> NUMBER</label>
+                        <label><input type="checkbox" class="perm-check" value="TEMPERATURE" /> TEMPERATURE</label>
+                        <label><input type="checkbox" class="perm-check" value="ISBN" /> ISBN</label>
+                        <label><input type="checkbox" class="perm-check" value="CALCULATOR" /> CALCULATOR</label>
+                        <label><input type="checkbox" class="perm-check" value="USER" /> USER</label>
+                        <label><input type="checkbox" class="perm-check" value="PRODUCTS" /> PRODUCTS</label>
+                        <label style="width:100%;font-weight:bold;margin-top:8px;margin-bottom:4px;">Admin Yetkileri:</label>
+                        <label><input type="checkbox" class="perm-check" value="USER_ADM" /> USER_ADM</label>
+                        <label><input type="checkbox" class="perm-check" value="PRODUCTS_ADM" /> PRODUCTS_ADM</label>
+                        <label><input type="checkbox" class="perm-check" value="PRODUCTS_DEL" /> PRODUCTS_DEL</label>
+                        <label><input type="checkbox" class="perm-check" value="PRODUCTS_PATCH" /> PRODUCTS_PATCH</label>
+                        <label><input type="checkbox" class="perm-check" value="PRODUCTS_POST" /> PRODUCTS_POST</label>
+                        <label><input type="checkbox" class="perm-check" value="PRODUCTS_GET" /> PRODUCTS_GET</label>
+                    </div>
+                    <div class="full-width flex">
+                        <button id="updateUserBtn" class="info">💾 Güncelle</button>
+                        <button id="deleteUserBtn" class="danger">🗑️ Sil</button>
+                        <button id="clearEditBtn" class="info">Temizle</button>
+                    </div>
+                </div>
+                <div id="editStatus" class="mt-10"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        'use strict';
+
+        // ============================================================
+        // FOLD FONKSİYONU (Global)
+        // ============================================================
+        window.toggleFold = function(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(id + 'Icon');
+            if (content) {
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    if (icon) icon.classList.remove('closed');
+                } else {
+                    content.classList.add('hidden');
+                    if (icon) icon.classList.add('closed');
+                }
+            }
+        };
+
+        // ============================================================
+        // KONFIG
+        // ============================================================
+        const BASE_URL = 'http://localhost:8081';
+
+        let accessToken = localStorage.getItem('accessToken') || '';
+        let currentUser = null;
+        let refreshToken = '';
+
+        const $ = id => document.getElementById(id);
+        const $$ = sel => document.querySelectorAll(sel);
+
+        // DOM REFS
+        const loginBtn = $('loginBtn');
+        const logoutBtn = $('logoutBtn');
+        const registerBtn = $('registerBtn');
+        const callApiBtn = $('callApiBtn');
+        const refreshBtn = $('refreshBtn');
+        const listUsersBtn = $('listUsersBtn');
+        const updateUserBtn = $('updateUserBtn');
+        const deleteUserBtn = $('deleteUserBtn');
+        const clearEditBtn = $('clearEditBtn');
+
+        const loginUsername = $('loginUsername');
+        const loginPassword = $('loginPassword');
+        const regUsername = $('regUsername');
+        const regPassword = $('regPassword');
+        const regIdentity = $('regIdentity');
+        const regName = $('regName');
+        const regLastName = $('regLastName');
+        const loginStatus = $('loginStatus');
+        const registerStatus = $('registerStatus');
+        const tokenDisplay = $('tokenDisplay');
+        const endpointSelect = $('endpointSelect');
+        const customEndpoint = $('customEndpoint');
+        const apiStatus = $('apiStatus');
+        const apiResponse = $('apiResponse');
+        const refreshStatus = $('refreshStatus');
+        const userListStatus = $('userListStatus');
+        const editStatus = $('editStatus');
+        const userTableContainer = $('userTableContainer');
+        const userTableBody = $('userTableBody');
+        const adminPanel = $('adminPanel');
+        const userBadge = $('userBadge');
+        const apiSection = $('apiSection');
+
+        const editUserId = $('editUserId');
+        const editUsername = $('editUsername');
+        const editPassword = $('editPassword');
+        const editIdentity = $('editIdentity');
+        const editName = $('editName');
+        const editLastName = $('editLastName');
+        const editRole = $('editRole');
+
+        // ÜRÜNLER DOM REFS
+        const productsSection = $('productsSection');
+        const listProductsBtn = $('listProductsBtn');
+        const productListStatus = $('productListStatus');
+        const productTableContainer = $('productTableContainer');
+        const productTableBody = $('productTableBody');
+        const productActionsHeader = $('productActionsHeader');
+        const productAddEditPanel = $('productAddEditPanel');
+        const prodId = $('prodId');
+        const prodName = $('prodName');
+        const prodCategory = $('prodCategory');
+        const prodPrice = $('prodPrice');
+        const prodStock = $('prodStock');
+        const prodSku = $('prodSku');
+        const prodBrand = $('prodBrand');
+        const prodDescription = $('prodDescription');
+        const prodActive = $('prodActive');
+        const saveProductBtn = $('saveProductBtn');
+        const deleteProductBtn = $('deleteProductBtn');
+        const clearProductBtn = $('clearProductBtn');
+        const productEditStatus = $('productEditStatus');
+
+        // ============================================================
+        // KENDİ ID KONTROLÜ
+        // ============================================================
+        editUserId.addEventListener('input', function() {
+            const val = this.value.trim();
+            if (val && currentUser && String(currentUser.id) === String(val)) {
+                this.value = '';
+                editStatus.innerHTML = '<span class="status err">❌ Kendi ID\'nizi giremezsiniz!</span>';
+                editUsername.value = '';
+                editPassword.value = '';
+                editIdentity.value = '';
+                editName.value = '';
+                editLastName.value = '';
+                editRole.value = 'USER';
+                setPermissions([]);
+
+                setTimeout(() => {
+                    if (editStatus.innerHTML.includes('Kendi ID\'nizi giremezsiniz')) {
+                        editStatus.innerHTML = '';
+                    }
+                }, 3000);
+            }
+        });
+
+        // ============================================================
+        // TOKEN YARDIMCILARI
+        // ============================================================
+        function isTokenExpired(token) {
+            if (!token) return true;
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return Date.now() > payload.exp * 1000;
+            } catch (e) {
+                return true;
+            }
+        }
+
+        // ============================================================
+        // REFRESH TOKEN
+        // ============================================================
+        async function refreshTokenFunc() {
+            try {
+                refreshStatus.innerHTML = '<span class="status info">⏳ Yenileniyor...</span>';
+
+                const res = await fetch(BASE_URL + '/auth/refresh-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+
+                if (!res.ok) {
+                    const text = await res.text();
+                    let errorMsg = 'Refresh başarısız: ' + res.status;
+                    try { const data = JSON.parse(text); errorMsg = data.message || errorMsg; } catch (e) {}
+                    throw new Error(errorMsg);
+                }
+
+                const data = await res.json();
+                accessToken = data.token;
+                localStorage.setItem('accessToken', accessToken);
+
+                showToken();
+                refreshStatus.innerHTML = '<span class="status ok">✅ Token yenilendi!</span>';
+                return true;
+            } catch (err) {
+                refreshStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+                return false;
+            }
+        }
+
+        // ============================================================
+        // YARDIMCI
+        // ============================================================
+        function showToken() {
+            if (accessToken) {
+                tokenDisplay.classList.remove('hidden');
+                tokenDisplay.innerHTML = '🔑 Token: ' + accessToken.substring(0, 50) + '...';
+                loginStatus.innerHTML = '<span class="status ok">✅ Giriş yapıldı</span>';
+            } else {
+                tokenDisplay.classList.add('hidden');
+            }
+        }
+
+        // Rol listesinden ürünlerle ilgili ince taneli (granular) yetkileri çıkarır.
+        function buildProductPerms(roles) {
+            roles = roles || [];
+            const isAdmin = roles.includes('admin') || roles.includes('products_adm');
+            const canCreate = isAdmin || roles.includes('products_post');
+            const canEdit = isAdmin || roles.includes('products_patch');
+            const canDelete = isAdmin || roles.includes('products_del');
+            return {
+                canCreateProducts: canCreate,
+                canEditProducts: canEdit,
+                canDeleteProducts: canDelete,
+                // Ekle/Düzenle panelini göstermek için: en az birine sahip olmak yeterli
+                canManageProducts: canCreate || canEdit || canDelete
+            };
+        }
+
+        function updateUI() {
+            showToken();
+
+            if (accessToken) {
+                apiSection.classList.remove('hidden');
+                productsSection.classList.remove('hidden');
+            } else {
+                apiSection.classList.add('hidden');
+                productsSection.classList.add('hidden');
+            }
+
+            const canCreateProducts = !!(currentUser && currentUser.canCreateProducts);
+            const canEditProducts = !!(currentUser && currentUser.canEditProducts);
+            const canDeleteProducts = !!(currentUser && currentUser.canDeleteProducts);
+            const canManageProducts = !!(currentUser && currentUser.canManageProducts);
+
+            if (canManageProducts) {
+                productAddEditPanel.classList.remove('hidden');
+                productActionsHeader.classList.remove('hidden');
+            } else {
+                productAddEditPanel.classList.add('hidden');
+                productActionsHeader.classList.add('hidden');
+            }
+
+            // Panel içindeki butonları da tek tek yetkiye göre göster/gizle
+            saveProductBtn.classList.toggle('hidden', !(canCreateProducts || canEditProducts));
+            deleteProductBtn.classList.toggle('hidden', !canDeleteProducts);
+
+            if (currentUser && currentUser.role === 'ADMIN') {
+                adminPanel.classList.remove('hidden');
+                userBadge.innerHTML = '<span class="badge admin">👑 Admin</span>';
+            } else if (currentUser) {
+                adminPanel.classList.add('hidden');
+                userBadge.innerHTML = '<span class="badge user">👤 ' + currentUser.username + '</span>';
+            } else {
+                adminPanel.classList.add('hidden');
+                userBadge.innerHTML = '';
+            }
+        }
+
+        function getHeaders() {
+            return {
+                'Authorization': 'Bearer ' + accessToken,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function getAuthHeaders() {
+            return { 'Content-Type': 'application/json' };
+        }
+
+        function setPermissions(permissions) {
+            $$('.perm-check').forEach(cb => {
+                cb.checked = false;
+            });
+            if (permissions && Array.isArray(permissions)) {
+                permissions.forEach(perm => {
+                    const cb = document.querySelector(`.perm-check[value="${perm}"]`);
+                    if (cb) cb.checked = true;
+                });
+            }
+        }
+
+        function setLoading(btn, loading) {
+            if (loading) {
+                btn.disabled = true;
+                btn.textContent = '⏳ İşleniyor...';
+            } else {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.originalText || btn.textContent;
+            }
+        }
+
+        document.querySelectorAll('button').forEach(b => {
+            b.dataset.originalText = b.textContent;
+        });
+
+        // ============================================================
+        // LOGIN
+        // ============================================================
+        async function login() {
+            const username = loginUsername.value.trim();
+            const password = loginPassword.value.trim();
+
+            if (!username || !password) {
+                loginStatus.innerHTML = '<span class="status err">❌ Kullanıcı adı ve şifre gerekli!</span>';
+                return;
+            }
+
+            setLoading(loginBtn, true);
+            try {
+                loginStatus.innerHTML = '<span class="status info">⏳ Giriş yapılıyor...</span>';
+                const res = await fetch(BASE_URL + '/auth/login', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const text = await res.text();
+
+                if (!text || text.trim() === '') {
+                    throw new Error('Sunucudan boş cevap geldi!');
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error('JSON parse hatası: ' + e.message + '\nCevap: ' + text.substring(0, 200));
+                }
+
+                if (!res.ok) throw new Error(data.message || 'Giriş başarısız');
+
+                accessToken = data.token;
+                localStorage.setItem('accessToken', accessToken);
+                refreshToken = data.refreshToken;
+
+                try {
+                    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+                    const roles = payload.roles || [];
+                    currentUser = {
+                        username: payload.sub,
+                        id: payload.id,
+                        role: roles.includes('admin') ? 'ADMIN' : 'USER',
+                        ...buildProductPerms(roles)
+                    };
+                } catch (e) {
+                    currentUser = { username: username, role: 'USER', ...buildProductPerms([]) };
+                }
+
+                updateUI();
+                loginStatus.innerHTML = '<span class="status ok">✅ Giriş başarılı! Hoş geldin ' + currentUser.username + '</span>';
+            } catch (err) {
+                loginStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+                console.error('Login hatası:', err);
+            } finally {
+                setLoading(loginBtn, false);
+            }
+        }
+
+        // ============================================================
+        // REGISTER
+        // ============================================================
+        async function register() {
+            const username = regUsername.value.trim();
+            const password = regPassword.value.trim();
+            const identityNumber = regIdentity.value.trim();
+            const name = regName.value.trim();
+            const lastName = regLastName.value.trim();
+
+            if (!username || !password || !identityNumber || !name || !lastName) {
+                registerStatus.innerHTML = '<span class="status err">❌ Tüm alanlar gerekli!</span>';
+                return;
+            }
+
+            setLoading(registerBtn, true);
+            try {
+                registerStatus.innerHTML = '<span class="status info">⏳ Hesap oluşturuluyor...</span>';
+                const res = await fetch(BASE_URL + '/api/users', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        username,
+                        password,
+                        ssn: identityNumber,
+                        name,
+                        lastName
+                    })
+                });
+
+                const text = await res.text();
+
+                if (!text || text.trim() === '') {
+                    if (res.status === 201 || res.status === 200) {
+                        registerStatus.innerHTML = '<span class="status ok">✅ Hesap oluşturuldu! Şimdi giriş yapabilirsiniz.</span>';
+                        regUsername.value = '';
+                        regPassword.value = '';
+                        regIdentity.value = '';
+                        regName.value = '';
+                        regLastName.value = '';
+                        return;
+                    }
+                    throw new Error('Sunucudan boş cevap geldi! (Status: ' + res.status + ')');
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error('JSON parse hatası: ' + e.message + '\nCevap: ' + text.substring(0, 200));
+                }
+
+                if (!res.ok) throw new Error(data.message || 'Kayıt başarısız');
+
+                registerStatus.innerHTML = '<span class="status ok">✅ Hesap oluşturuldu! Şimdi giriş yapabilirsiniz.</span>';
+                regUsername.value = '';
+                regPassword.value = '';
+                regIdentity.value = '';
+                regName.value = '';
+                regLastName.value = '';
+            } catch (err) {
+                registerStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+                console.error('Kayıt hatası:', err);
+            } finally {
+                setLoading(registerBtn, false);
+            }
+        }
+
+        // ============================================================
+        // LOGOUT
+        // ============================================================
+        function logout() {
+            localStorage.removeItem('accessToken');
+            accessToken = '';
+            refreshToken = '';
+            currentUser = null;
+            tokenDisplay.classList.add('hidden');
+            loginStatus.innerHTML = '<span class="status err">🚪 Çıkış yapıldı</span>';
+            apiResponse.textContent = 'Çıkış yapıldı.';
+            apiStatus.innerHTML = '';
+            refreshStatus.innerHTML = '';
+            userTableContainer.classList.add('hidden');
+            productTableContainer.classList.add('hidden');
+            productTableBody.innerHTML = '';
+            productListStatus.innerHTML = '';
+            clearProductForm();
+            adminPanel.classList.add('hidden');
+            userBadge.innerHTML = '';
+            console.log('🚪 Çıkış yapıldı');
+            updateUI();
+        }
+
+        // ============================================================
+        // CALL API
+        // ============================================================
+        async function callApi() {
+            if (!accessToken) {
+                apiStatus.innerHTML = '<span class="status err">❌ Önce giriş yapın!</span>';
+                return;
+            }
+
+            if (isTokenExpired(accessToken)) {
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    apiStatus.innerHTML = '<span class="status err">❌ Token süresi doldu, tekrar giriş yapın!</span>';
+                    return;
+                }
+            }
+
+            let endpoint = customEndpoint.value.trim();
+            if (!endpoint) endpoint = endpointSelect.value;
+            if (!endpoint.startsWith('/')) endpoint = '/' + endpoint;
+
+            const selectedFields = Array.from(document.querySelectorAll('.field-check:checked')).map(cb => cb.value);
+            if (selectedFields.length > 0) {
+                const separator = endpoint.includes('?') ? '&' : '?';
+                endpoint += separator + 'fields=' + selectedFields.map(encodeURIComponent).join(',');
+            }
+
+            const methodSelect = document.getElementById('methodSelect');
+            const method = methodSelect.value;
+
+            setLoading(callApiBtn, true);
+            apiStatus.innerHTML = '<span class="status info">⏳ İstek gönderiliyor...</span>';
+
+            try {
+                let options = {
+                    method: method,
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Accept': 'application/xml'
+                    }
+                };
+
+                if (method === 'POST') {
+                    options.body = '{}';
+                    options.headers['Content-Type'] = 'application/json';
+                }
+
+                const res = await fetch(BASE_URL + endpoint, options);
+
+                let responseText = await res.text();
+
+                if (responseText.trim().startsWith('<')) {
+                    try {
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(responseText, 'text/xml');
+                        const serializer = new XMLSerializer();
+                        responseText = formatXml(serializer.serializeToString(xmlDoc.documentElement));
+                    } catch (e) {}
+                } else {
+                    try {
+                        responseText = JSON.stringify(JSON.parse(responseText), null, 2);
+                    } catch (e) {}
+                }
+
+                apiStatus.innerHTML = res.ok
+                    ? '<span class="status ok">✅ ' + res.status + ' ' + res.statusText + '</span>'
+                    : '<span class="status err">❌ ' + res.status + ' ' + res.statusText + '</span>';
+                apiResponse.textContent = responseText;
+            } catch (err) {
+                apiStatus.innerHTML = '<span class="status err">❌ Ağ hatası: ' + err.message + '</span>';
+                apiResponse.textContent = 'Ağ hatası: ' + err.message;
+            } finally {
+                setLoading(callApiBtn, false);
+            }
+        }
+
+        // ============================================================
+        // XML Formatlama
+        // ============================================================
+        function formatXml(xml) {
+            let formatted = '';
+            let indent = '';
+            const tab = '    ';
+            xml.split(/>\s*</).forEach(function(node) {
+                if (node.match(/^\/\w/)) {
+                    indent = indent.substring(tab.length);
+                }
+                formatted += indent + '<' + node + '>\r\n';
+                if (node.match(/^<?\w[^>]*[^\/]$/)) {
+                    indent += tab;
+                }
+            });
+            return formatted.substring(1, formatted.length - 3);
+        }
+
+        // ============================================================
+        // ADMIN: LIST USERS
+        // ============================================================
+        async function listUsers() {
+            if (!accessToken) {
+                userListStatus.innerHTML = '<span class="status err">❌ Önce giriş yapın!</span>';
+                return;
+            }
+
+            if (isTokenExpired(accessToken)) {
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    userListStatus.innerHTML = '<span class="status err">❌ Token süresi doldu, tekrar giriş yapın!</span>';
+                    return;
+                }
+            }
+
+            setLoading(listUsersBtn, true);
+            userListStatus.innerHTML = '<span class="status info">⏳ Yükleniyor...</span>';
+            userTableContainer.classList.add('hidden');
+
+            try {
+                const res = await fetch(BASE_URL + '/api/users', {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Listeleme başarısız');
+
+                userTableBody.innerHTML = '';
+                data.forEach(user => {
+                    const tr = document.createElement('tr');
+                    const roleClass = user.role === 'ADMIN' ? 'admin' : 'user';
+
+                    let permsHtml = '-';
+                    if (user.permissions && user.permissions.length > 0) {
+                        permsHtml = user.permissions.map(p =>
+                            `<span class="perm-tag ${p}">${p}</span>`
+                        ).join(' ');
+                    }
+
+                    const isSelf = currentUser && String(currentUser.id) === String(user.id);
+
+                    tr.innerHTML = `
+                        <td>${user.id}</td>
+                        <td><strong>${user.username}</strong></td>
+                        <td>${user.ssn || '-'}</td>
+                        <td>${user.name || '-'}</td>
+                        <td>${user.lastName || '-'}</td>
+                        <td><span class="role-tag ${roleClass}">${user.role || 'USER'}</span></td>
+                        <td>${permsHtml}</td>
+                        <td class="flex" style="gap:6px;">
+                            <button class="info select-user-btn" style="padding:4px 10px;font-size:12px;" ${isSelf ? 'disabled title="Kendini seçemezsin"' : ''}>
+                                📝 Seç
+                            </button>
+                            <button class="danger row-delete-btn" style="padding:4px 10px;font-size:12px;" ${isSelf ? 'disabled title="Kendini silemezsin"' : ''}>
+                                🗑️ Sil
+                            </button>
+                        </td>
+                    `;
+
+                    tr.querySelector('.select-user-btn').addEventListener('click', () => {
+                        window.selectUser(
+                            user.id,
+                            user.role || 'USER',
+                            user.username || '',
+                            user.ssn || '',
+                            user.name || '',
+                            user.lastName || '',
+                            user.permissions || []
+                        );
+                    });
+
+                    if (!isSelf) {
+                        tr.querySelector('.row-delete-btn').addEventListener('click', () => {
+                            window.deleteUserById(user.id, user.username);
+                        });
+                    }
+
+                    userTableBody.appendChild(tr);
+                });
+
+                userTableContainer.classList.remove('hidden');
+                userListStatus.innerHTML = '<span class="status ok">✅ ' + data.length + ' kullanıcı bulundu</span>';
+            } catch (err) {
+                userListStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+            } finally {
+                setLoading(listUsersBtn, false);
+            }
+        }
+
+        // ============================================================
+        // GLOBAL: selectUser
+        // ============================================================
+        window.selectUser = function(id, role, username, ssn, name, lastName, permissions) {
+            editUserId.value = id;
+            editUsername.value = username || '';
+            editIdentity.value = ssn || '';
+            editName.value = name || '';
+            editLastName.value = lastName || '';
+            editRole.value = role || 'USER';
+            editPassword.value = '';
+
+            document.querySelectorAll('.perm-check').forEach(cb => cb.checked = false);
+            if (permissions && Array.isArray(permissions)) {
+                permissions.forEach(perm => {
+                    const cb = document.querySelector(`.perm-check[value="${perm}"]`);
+                    if (cb) cb.checked = true;
+                });
+            }
+
+            editStatus.innerHTML = '<span class="status ok">✅ Kullanıcı seçildi: ID ' + id + ' (' + username + ')</span>';
+        };
+
+        // ============================================================
+        // GLOBAL: deleteUserById
+        // ============================================================
+        window.deleteUserById = async function(id, username) {
+            if (currentUser && String(currentUser.id) === String(id)) {
+                userListStatus.innerHTML = '<span class="status err">❌ Kendini silemezsin!</span>';
+                return;
+            }
+
+            if (!confirm('"' + username + '" (ID: ' + id + ') silinsin mi?')) return;
+
+            if (isTokenExpired(accessToken)) {
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    userListStatus.innerHTML = '<span class="status err">❌ Token süresi doldu, tekrar giriş yapın!</span>';
+                    return;
+                }
+            }
+
+            try {
+                userListStatus.innerHTML = '<span class="status info">⏳ Siliniyor...</span>';
+                const res = await fetch(BASE_URL + '/api/users/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + accessToken }
+                });
+
+                if (res.status === 204 || res.status === 200) {
+                    userListStatus.innerHTML = '<span class="status ok">✅ "' + username + '" silindi!</span>';
+                    if (String(editUserId.value) === String(id)) clearEditForm();
+                    listUsers();
+                } else {
+                    const text = await res.text();
+                    let errorMsg = 'Silme başarısız (HTTP ' + res.status + ')';
+                    try { const data = JSON.parse(text); errorMsg = data.message || errorMsg; } catch (e) {}
+                    throw new Error(errorMsg);
+                }
+            } catch (err) {
+                userListStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+            }
+        };
+
+        // ============================================================
+        // ADMIN: UPDATE USER
+        // ============================================================
+        async function updateUser() {
+            const id = editUserId.value;
+            if (!id) {
+                editStatus.innerHTML = '<span class="status err">❌ Bir kullanıcı seçin!</span>';
+                return;
+            }
+
+            if (currentUser && String(currentUser.id) === String(id)) {
+                editStatus.innerHTML = '<span class="status err">❌ Kendi bilgilerini buradan değiştiremezsin!</span>';
+                return;
+            }
+
+            if (isTokenExpired(accessToken)) {
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    editStatus.innerHTML = '<span class="status err">❌ Token süresi doldu, tekrar giriş yapın!</span>';
+                    return;
+                }
+            }
+
+            const payload = {};
+            if (editUsername.value.trim()) payload.username = editUsername.value.trim();
+            if (editPassword.value.trim()) payload.password = editPassword.value.trim();
+            if (editIdentity.value.trim()) payload.ssn = editIdentity.value.trim();
+            if (editName.value.trim()) payload.name = editName.value.trim();
+            if (editLastName.value.trim()) payload.lastName = editLastName.value.trim();
+            if (editRole.value) payload.role = editRole.value;
+
+            const perms = [];
+            document.querySelectorAll('.perm-check:checked').forEach(cb => perms.push(cb.value));
+            payload.permissions = perms;
+
+            if (Object.keys(payload).length === 0) {
+                editStatus.innerHTML = '<span class="status warning">⚠️ Güncellenecek alan yok!</span>';
+                return;
+            }
+
+            setLoading(updateUserBtn, true);
+            try {
+                editStatus.innerHTML = '<span class="status info">⏳ Güncelleniyor...</span>';
+                const res = await fetch(BASE_URL + '/api/users/' + id, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const text = await res.text();
+                let data = {};
+                if (text && text.length > 0) {
+                    try { data = JSON.parse(text); } catch (e) {
+                        if (res.ok) {
+                            editStatus.innerHTML = '<span class="status ok">✅ Kullanıcı güncellendi!</span>';
+                            listUsers();
+                            editPassword.value = '';
+                            return;
+                        }
+                        throw new Error('Sunucu hatası: ' + res.status);
+                    }
+                }
+
+                if (!res.ok) throw new Error(data.message || 'Güncelleme başarısız');
+
+                editStatus.innerHTML = '<span class="status ok">✅ Kullanıcı güncellendi!</span>';
+                editPassword.value = '';
+                listUsers();
+            } catch (err) {
+                editStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+                console.error('Update hatası:', err);
+            } finally {
+                setLoading(updateUserBtn, false);
+            }
+        }
+
+        // ============================================================
+        // ADMIN: DELETE USER
+        // ============================================================
+        async function deleteUser() {
+            const id = editUserId.value;
+            if (!id) {
+                editStatus.innerHTML = '<span class="status err">❌ Bir kullanıcı seçin!</span>';
+                return;
+            }
+
+            if (isTokenExpired(accessToken)) {
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    editStatus.innerHTML = '<span class="status err">❌ Token süresi doldu, tekrar giriş yapın!</span>';
+                    return;
+                }
+            }
+
+            if (!confirm('Kullanıcı ID ' + id + ' silinsin mi?')) return;
+
+            setLoading(deleteUserBtn, true);
+            try {
+                editStatus.innerHTML = '<span class="status info">⏳ Siliniyor...</span>';
+                const res = await fetch(BASE_URL + '/api/users/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + accessToken }
+                });
+
+                if (res.status === 204 || res.status === 200) {
+                    editStatus.innerHTML = '<span class="status ok">✅ Kullanıcı silindi!</span>';
+                    clearEditForm();
+                    listUsers();
+                } else {
+                    const text = await res.text();
+                    let errorMsg = 'Silme başarısız (HTTP ' + res.status + ')';
+                    try { const data = JSON.parse(text); errorMsg = data.message || errorMsg; } catch (e) {}
+                    throw new Error(errorMsg);
+                }
+            } catch (err) {
+                editStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+            } finally {
+                setLoading(deleteUserBtn, false);
+            }
+        }
+
+        function clearEditForm() {
+            editUserId.value = '';
+            editUsername.value = '';
+            editPassword.value = '';
+            editIdentity.value = '';
+            editName.value = '';
+            editLastName.value = '';
+            editRole.value = 'USER';
+            setPermissions([]);
+            editStatus.innerHTML = '';
+        }
+
+        // ============================================================
+        // ÜRÜNLER: LISTELE (herkes görüntüleyebilir)
+        // ============================================================
+        async function listProducts() {
+            if (!accessToken) {
+                productListStatus.innerHTML = '<span class="status err">❌ Önce giriş yapın!</span>';
+                return;
+            }
+
+            if (isTokenExpired(accessToken)) {
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    productListStatus.innerHTML = '<span class="status err">❌ Token süresi doldu, tekrar giriş yapın!</span>';
+                    return;
+                }
+            }
+
+            setLoading(listProductsBtn, true);
+            productListStatus.innerHTML = '<span class="status info">⏳ Yükleniyor...</span>';
+            productTableContainer.classList.add('hidden');
+
+            try {
+                const res = await fetch(BASE_URL + '/api/products', {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Listeleme başarısız');
+
+                const canEditProducts = !!(currentUser && currentUser.canEditProducts);
+                const canDeleteProducts = !!(currentUser && currentUser.canDeleteProducts);
+                const showActionsCol = canEditProducts || canDeleteProducts;
+                productTableBody.innerHTML = '';
+                data.forEach(product => {
+                    const tr = document.createElement('tr');
+                    const activeBadge = product.is_active
+                        ? '<span class="pill success">Aktif</span>'
+                        : '<span class="pill danger">Pasif</span>';
+
+                    let actionsHtml = '';
+                    if (showActionsCol) {
+                        actionsHtml = `
+                            <td class="flex" style="gap:6px;">
+                                ${canEditProducts ? '<button class="info select-product-btn" style="padding:4px 10px;font-size:12px;">📝 Seç</button>' : ''}
+                                ${canDeleteProducts ? '<button class="danger row-product-delete-btn" style="padding:4px 10px;font-size:12px;">🗑️ Sil</button>' : ''}
+                            </td>
+                        `;
+                    }
+
+                    tr.innerHTML = `
+                        <td>${product.id}</td>
+                        <td><strong>${product.product_name || ''}</strong></td>
+                        <td>${product.category || '-'}</td>
+                        <td>${product.price != null ? product.price : '-'}</td>
+                        <td>${product.stock_quantity != null ? product.stock_quantity : '-'}</td>
+                        <td>${product.sku || '-'}</td>
+                        <td>${product.brand || '-'}</td>
+                        <td>${activeBadge}</td>
+                        ${actionsHtml}
+                    `;
+
+                    if (canEditProducts) {
+                        tr.querySelector('.select-product-btn').addEventListener('click', () => {
+                            window.selectProduct(product);
+                        });
+                    }
+                    if (canDeleteProducts) {
+                        tr.querySelector('.row-product-delete-btn').addEventListener('click', () => {
+                            window.deleteProductById(product.id, product.product_name);
+                        });
+                    }
+
+                    productTableBody.appendChild(tr);
+                });
+
+                productTableContainer.classList.remove('hidden');
+                productListStatus.innerHTML = '<span class="status ok">✅ ' + data.length + ' ürün bulundu</span>';
+            } catch (err) {
+                productListStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+            } finally {
+                setLoading(listProductsBtn, false);
+            }
+        }
+
+        // ============================================================
+        // GLOBAL: selectProduct (sadece admin/products_adm kullanır)
+        // ============================================================
+        window.selectProduct = function(product) {
+            prodId.value = product.id;
+            prodName.value = product.product_name || '';
+            prodCategory.value = product.category || '';
+            prodPrice.value = product.price != null ? product.price : '';
+            prodStock.value = product.stock_quantity != null ? product.stock_quantity : '';
+            prodSku.value = product.sku || '';
+            prodBrand.value = product.brand || '';
+            prodDescription.value = product.description || '';
+            prodActive.checked = !!product.is_active;
+            productEditStatus.innerHTML = '<span class="status ok">✅ Ürün seçildi: ID ' + product.id + ' (' + (product.product_name || '') + ')</span>';
+        };
+
+        // ============================================================
+        // ÜRÜNLER: KAYDET (yeni ekle = POST, düzenle = PATCH) - sadece admin/products_adm
+        // ============================================================
+        async function saveProduct() {
+            const id = prodId.value.trim();
+            const name = prodName.value.trim();
+
+            if (!id && !name) {
+                productEditStatus.innerHTML = '<span class="status err">❌ Ürün adı gerekli!</span>';
+                return;
+            }
+
+            if (isTokenExpired(accessToken)) {
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    productEditStatus.innerHTML = '<span class="status err">❌ Token süresi doldu, tekrar giriş yapın!</span>';
+                    return;
+                }
+            }
+
+            const payload = {};
+            if (prodName.value.trim()) payload.product_name = prodName.value.trim();
+            if (prodCategory.value.trim()) payload.category = prodCategory.value.trim();
+            if (prodPrice.value.trim() !== '') payload.price = parseFloat(prodPrice.value);
+            if (prodStock.value.trim() !== '') payload.stock_quantity = parseInt(prodStock.value, 10);
+            if (prodSku.value.trim()) payload.sku = prodSku.value.trim();
+            if (prodBrand.value.trim()) payload.brand = prodBrand.value.trim();
+            if (prodDescription.value.trim()) payload.description = prodDescription.value.trim();
+            payload.is_active = prodActive.checked;
+
+            const isEdit = !!id;
+            const url = isEdit ? BASE_URL + '/api/products/' + id : BASE_URL + '/api/products';
+            const method = isEdit ? 'PATCH' : 'POST';
+
+            setLoading(saveProductBtn, true);
+            try {
+                productEditStatus.innerHTML = '<span class="status info">⏳ Kaydediliyor...</span>';
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const text = await res.text();
+                let data = {};
+                if (text && text.length > 0) {
+                    try { data = JSON.parse(text); } catch (e) {}
+                }
+
+                if (!res.ok) throw new Error(data.message || 'Kaydetme başarısız');
+
+                clearProductForm();
+                productEditStatus.innerHTML = '<span class="status ok">✅ Ürün ' + (isEdit ? 'güncellendi' : 'oluşturuldu') + '!</span>';
+                listProducts();
+            } catch (err) {
+                productEditStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+                console.error('Ürün kaydetme hatası:', err);
+            } finally {
+                setLoading(saveProductBtn, false);
+            }
+        }
+
+        // ============================================================
+        // ÜRÜNLER: SİL (sadece admin) - formdaki ID üzerinden
+        // ============================================================
+        async function deleteProduct() {
+            const id = prodId.value.trim();
+            if (!id) {
+                productEditStatus.innerHTML = '<span class="status err">❌ Bir ürün seçin!</span>';
+                return;
+            }
+
+            if (isTokenExpired(accessToken)) {
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    productEditStatus.innerHTML = '<span class="status err">❌ Token süresi doldu, tekrar giriş yapın!</span>';
+                    return;
+                }
+            }
+
+            if (!confirm('Ürün ID ' + id + ' silinsin mi?')) return;
+
+            setLoading(deleteProductBtn, true);
+            try {
+                productEditStatus.innerHTML = '<span class="status info">⏳ Siliniyor...</span>';
+                const res = await fetch(BASE_URL + '/api/products/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + accessToken }
+                });
+
+                if (res.status === 204 || res.status === 200) {
+                    clearProductForm();
+                    productEditStatus.innerHTML = '<span class="status ok">✅ Ürün silindi!</span>';
+                    listProducts();
+                } else {
+                    const text = await res.text();
+                    let errorMsg = 'Silme başarısız (HTTP ' + res.status + ')';
+                    try { const data = JSON.parse(text); errorMsg = data.message || errorMsg; } catch (e) {}
+                    throw new Error(errorMsg);
+                }
+            } catch (err) {
+                productEditStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+            } finally {
+                setLoading(deleteProductBtn, false);
+            }
+        }
+
+        // ============================================================
+        // GLOBAL: deleteProductById (tablo satırından direkt silme)
+        // ============================================================
+        window.deleteProductById = async function(id, name) {
+            if (!confirm('"' + (name || id) + '" (ID: ' + id + ') silinsin mi?')) return;
+
+            if (isTokenExpired(accessToken)) {
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    productListStatus.innerHTML = '<span class="status err">❌ Token süresi doldu, tekrar giriş yapın!</span>';
+                    return;
+                }
+            }
+
+            try {
+                productListStatus.innerHTML = '<span class="status info">⏳ Siliniyor...</span>';
+                const res = await fetch(BASE_URL + '/api/products/' + id, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + accessToken }
+                });
+
+                if (res.status === 204 || res.status === 200) {
+                    productListStatus.innerHTML = '<span class="status ok">✅ "' + (name || id) + '" silindi!</span>';
+                    if (String(prodId.value) === String(id)) clearProductForm();
+                    listProducts();
+                } else {
+                    const text = await res.text();
+                    let errorMsg = 'Silme başarısız (HTTP ' + res.status + ')';
+                    try { const data = JSON.parse(text); errorMsg = data.message || errorMsg; } catch (e) {}
+                    throw new Error(errorMsg);
+                }
+            } catch (err) {
+                productListStatus.innerHTML = '<span class="status err">❌ ' + err.message + '</span>';
+            }
+        };
+
+        function clearProductForm() {
+            prodId.value = '';
+            prodName.value = '';
+            prodCategory.value = '';
+            prodPrice.value = '';
+            prodStock.value = '';
+            prodSku.value = '';
+            prodBrand.value = '';
+            prodDescription.value = '';
+            prodActive.checked = true;
+            productEditStatus.innerHTML = '';
+        }
+
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+        loginBtn.addEventListener('click', login);
+        logoutBtn.addEventListener('click', logout);
+        registerBtn.addEventListener('click', register);
+        callApiBtn.addEventListener('click', callApi);
+        refreshBtn.addEventListener('click', refreshTokenFunc);
+        listUsersBtn.addEventListener('click', listUsers);
+        updateUserBtn.addEventListener('click', updateUser);
+        deleteUserBtn.addEventListener('click', deleteUser);
+        clearEditBtn.addEventListener('click', clearEditForm);
+
+        listProductsBtn.addEventListener('click', listProducts);
+        saveProductBtn.addEventListener('click', saveProduct);
+        deleteProductBtn.addEventListener('click', deleteProduct);
+        clearProductBtn.addEventListener('click', clearProductForm);
+
+        loginPassword.addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+        loginUsername.addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+        regPassword.addEventListener('keypress', e => { if (e.key === 'Enter') register(); });
+        regLastName.addEventListener('keypress', e => { if (e.key === 'Enter') register(); });
+
+        // ============================================================
+        // OTOMATİK REFRESH
+        // ============================================================
+        setInterval(async () => {
+            if (accessToken && isTokenExpired(accessToken)) {
+                console.log('⏰ Token süresi doldu, otomatik yenileniyor...');
+                const refreshed = await refreshTokenFunc();
+                if (!refreshed) {
+                    logout();
+                    alert('Oturum süresi doldu, tekrar giriş yapın.');
+                }
+            }
+        }, 60000);
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        if (accessToken) {
+            try {
+                const payload = JSON.parse(atob(accessToken.split('.')[1]));
+                const roles = payload.roles || [];
+                currentUser = {
+                    username: payload.sub,
+                    id: payload.id,
+                    role: roles.includes('admin') ? 'ADMIN' : 'USER',
+                    ...buildProductPerms(roles)
+                };
+            } catch (e) { currentUser = null; }
+        }
+        updateUI();
+        console.log('🔑 BASE_URL:', BASE_URL);
+        console.log('👤 Kullanıcı:', currentUser);
+    })();
+
+    // ============================================================
+    // FIELD MAP - WSDL'ye göre güncellendi
+    // ============================================================
+    const FIELD_MAP = {
+        '/api/users-products': {
+            prefix: '',
+            groups: {
+                'Kullanıcı (userInfo)': [
+                    'id',
+                    'ssn',
+                    'username',
+                    'name',
+                    'lastName',
+                    'role',
+                    'permissions',
+                    'accountCreatedAt',
+                    'lastAccessAt'
+                ],
+                'Ürün (productInfo)': [
+                    'id',
+                    'productName',
+                    'category',
+                    'price',
+                    'stockQuantity',
+                    'sku',
+                    'brand',
+                    'description',
+                    'isActive',
+                    'createdAt'
+                ]
+            }
+        },
+        '/single/country': {
+            prefix: '',
+            groups: {
+                'Ülke Bilgileri': ['sName', 'sCapitalCity', 'sPhoneCode', 'sContinentCode', 'sCountryFlag', 'sISOCode'],
+                'Diller (Language)': ['sISOCode', 'sName']
+            }
+        },
+        '/single/number': {
+            prefix: '',
+            groups: {
+                'Sayı': ['NumberToWordsResult']
+            }
+        },
+        '/global/number': {
+            prefix: '',
+            groups: {
+                'Sayı': ['NumberToWordsResult']
+            }
+        },
+        '/global/country': {
+            prefix: '',
+            groups: {
+                'Ülke Bilgileri': ['sName', 'sCapitalCity', 'sPhoneCode', 'sContinentCode', 'sCountryFlag', 'sISOCode'],
+                'Diller (Language)': ['sISOCode', 'sName']
+            }
+        },
+        '/single/aggregate': {
+            prefix: '',
+            groups: {
+                'Ülke (Country)': ['sName', 'sCapitalCity', 'sPhoneCode', 'sContinentCode', 'sCountryFlag', 'sISOCode'],
+                'Diller (Language)': ['sISOCode', 'sName'],
+                'Sayı (Number)': ['NumberToWordsResult']
+            }
+        }
+    };
+
+    function matchFieldConfig(endpoint) {
+        const key = Object.keys(FIELD_MAP).find(k => endpoint.startsWith(k));
+        return key ? FIELD_MAP[key] : null;
+    }
+
+    function renderFieldsUI(endpoint) {
+        const area = document.getElementById('fieldsFilterArea');
+        const config = matchFieldConfig(endpoint);
+
+        if (!config) {
+            area.classList.add('hidden');
+            area.innerHTML = '';
+            return;
+        }
+
+        let html = '<label style="width:100%;font-weight:bold;margin-bottom:6px;">📋 Gösterilecek alanlar (boş = tümü):</label>';
+
+        for (const [groupName, fields] of Object.entries(config.groups)) {
+            html += `<div style="width:100%;font-size:12px;color:#888;margin-top:6px;border-top:1px solid #444;padding-top:6px;">${groupName}</div>`;
+            html += '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;">';
+
+            fields.forEach(f => {
+                html += `<label style="font-size:12px;"><input type="checkbox" class="field-check" value="${f}" /> ${f}</label>`;
+            });
+
+            html += '</div>';
+        }
+
+        // Tümünü Seç / Temizle butonları
+        html += `
+            <div style="width:100%;margin-top:8px;display:flex;gap:8px;">
+                <button type="button" onclick="selectAllFields()" class="info" style="padding:4px 12px;font-size:12px;">✅ Tümünü Seç</button>
+                <button type="button" onclick="clearAllFields()" class="danger" style="padding:4px 12px;font-size:12px;">❌ Temizle</button>
+            </div>
+        `;
+
+        area.innerHTML = html;
+        area.classList.remove('hidden');
+    }
+
+    // Global fonksiyonlar
+    window.selectAllFields = function() {
+        document.querySelectorAll('.field-check').forEach(cb => cb.checked = true);
+    };
+
+    window.clearAllFields = function() {
+        document.querySelectorAll('.field-check').forEach(cb => cb.checked = false);
+    };
+
+    // Endpoint değişikliklerini dinle
+    document.getElementById('endpointSelect').addEventListener('change', function() {
+        renderFieldsUI(this.value);
+    });
+
+    document.getElementById('customEndpoint').addEventListener('input', function() {
+        if (this.value.trim()) {
+            renderFieldsUI(this.value.trim());
+        } else {
+            renderFieldsUI(document.getElementById('endpointSelect').value);
+        }
+    });
+
+    // Sayfa ilk yüklendiğinde
+    renderFieldsUI(document.getElementById('endpointSelect').value);
+</script>
+</body>
+</html>
