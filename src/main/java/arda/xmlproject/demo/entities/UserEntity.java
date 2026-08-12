@@ -1,6 +1,7 @@
 package arda.xmlproject.demo.entities;
 
 import jakarta.persistence.*;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,11 +14,13 @@ import java.util.Set;
 @Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
+@XmlRootElement
 public class UserEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long ssn;
 
     private String username;
     private String password;
@@ -33,9 +36,12 @@ public class UserEntity {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_permissions", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "permission")
+    @Column(name = "permission", length = 50)
     @Enumerated(EnumType.STRING)
     private Set<ApiPermissions> permissions;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<RefreshTokenEntity> refreshTokens;
 
 
     @PrePersist
