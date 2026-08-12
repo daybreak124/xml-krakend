@@ -10,34 +10,40 @@ Application.properties'de aşağıda özel olarak belirtilmiş linkler dinamik A
 
 ## KURULUM
 Öncelikle konsolda ./gradlew clean build yapılmalı
-"docker compose up" ile docker başlar (sona -d ekleyince loglar terminali işgal etmez)
+"docker compose up" ile docker başlar. sonuna --build eklenince containerlar oluşturulur
+
 
 Vault ilk kez çalıştırılınca initializelanması gerekir.
-docker exec -it vault sh
+(terminalde ise. eğer dockerden yapılıyorsa atlanabilir) docker exec -it vault sh
 export VAULT_ADDR=http://127.0.0.1:8200
 vault operator init
 
+
 Bu komut 5 unseal key ve 1 root token üretir. Bunlar not alınmalı.
 
+
 Vault her container restartında kilitlenir ve geri açılması gerekir. Üretilen 5 key'den herhangi 3 tanesiyle unseal yapılır:
-docker exec -it vault sh
+(terminalde ise. eğer dockerden yapılıyorsa atlanabilir) docker exec -it vault sh
 export VAULT_ADDR=http://127.0.0.1:8200
 vault operator unseal   # 1. key
 vault operator unseal   # 2. key
 vault operator unseal   # 3. key
 
+
 JWT secret key Vault'a kaydedilir:
 vault kv put -mount=secret demo \
 security.jwt.secret-key="SECRET_KEY_BURAYA"
+
 
 Kontrol etmek için: vault kv get -mount=secret demo
 
 
 vault operator init çıktısındaki Initial Root Token, Spring Boot tarafında Vault'a erişim için kullanılıyor.
 application.properties dosyasına eklenmesi lazım:
-Proje kök dizininde .env dosyasına:
+Proje kök dizininde .env dosyası oluşturulmalı ve içine:
 VAULT_TOKEN=VAULT_TOKEN_BURAYA(hvs.**********...)
-koyulmalı
+^koyulmalı
+
 
 ^Bunları yaptıktan sonra uygulama çalışır
 KrakenD Gateway: http://localhost:8081
@@ -69,7 +75,7 @@ Universal SOAP controller ve SoapInvoker dinamik olarak, ayrı ayrı endpoint ay
 WSDL dosyası indirme örneği: curl -o src/main/resources/wsdl/TempConvert.wsdl "https://www.w3schools.com/xml/tempconvert.asmx?WSDL"
 (veya direkt WSDL dosyasını indirip sürüklemek)
 sonra ise: ./gradlew wsdl2java ile sınıflar oluşur
-sonra application.properties içine gerekli bilgiler yazılır
+sonra application.properties içine gerekli bilgiler yazılır ve/veya backendde endpoint belirlenir
 
 soap.services.{}.wsdl=<URL>
 soap.services.{}.serviceClass=<wsdl'den üretildikten sonraki PAKET ismi>
@@ -77,10 +83,10 @@ soap.services.{}.portMethod=<port döndüren, constructor ismi>
 ##
 
 
-## FRONTEND GELİŞTİRİLDİKTEN SONRA UPDATE:
+## KULLANICI OLUŞTURMA (VE ADMİN YAPMA)
 Kayıt olduktan sonra mysql'de (veya hangi db kullanılıyorsa orada):
 UPDATE table
-SET role = "ADMIN" WHERE id = userid
+SET role = "ADMIN" WHERE id = kullanıcının_idsi
 ile kullanıcı admin yapılmalı.
 -------------------------
 GLOBAL Endpoint:
@@ -108,5 +114,5 @@ http://localhost:8081/single/aggregate/TR/15
 
 ## UPDATELEME
 Backenddeki her değişiklikte maalesef docker compose down ve docker compose up --build gerekir
-Sadece spring de buildlenirse olur
+Sadece spring buildlanırsa da olur:
 (docker compose build spring-boot veya docker compose up --build spring-boot)
