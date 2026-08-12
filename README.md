@@ -2,12 +2,67 @@ Bot Detector cache size: son x sayıdakileri cachele
 shared cache: her cihazın ortak cache'i olması için. sunucu taraflı caching herhalde
 max rate: global max rate limit
 client max rate: client için max rate limit
-propagate_claims: tokendeki bir kısmı alıp ondan header üretir
+propagate_claims: tokendeki claimleri backende header olarak iletmek için
 input_headers: gelen header'ı kullanmak/erişmek için izin
 
-##
-Universal SOAP controller ve SoapInvoker dinamik olarak, ayrı ayrı endpoint ayarlamadan 
-API erişimi sağlar
+Application.properties'de aşağıda özel olarak belirtilmiş linkler dinamik API çağrısı için
+
+
+## KURULUM
+Öncelikle konsolda ./gradlew clean build yapılmalı
+"docker compose up" ile docker başlar (sona -d ekleyince loglar terminali işgal etmez)
+
+Vault ilk kez çalıştırılınca initializelanması gerekir.
+docker exec -it vault sh
+export VAULT_ADDR=http://127.0.0.1:8200
+vault operator init
+
+Bu komut 5 unseal key ve 1 root token üretir. Bunlar not alınmalı.
+
+Vault her container restartında kilitlenir ve geri açılması gerekir. Üretilen 5 key'den herhangi 3 tanesiyle unseal yapılır:
+docker exec -it vault sh
+export VAULT_ADDR=http://127.0.0.1:8200
+vault operator unseal   # 1. key
+vault operator unseal   # 2. key
+vault operator unseal   # 3. key
+
+JWT secret key Vault'a kaydedilir:
+vault kv put -mount=secret demo \
+security.jwt.secret-key="BURAYA_SECRET_KEY"
+
+Kontrol etmek için: vault kv get -mount=secret demo
+
+
+vault operator init çıktısındaki Initial Root Token, Spring Boot tarafında Vault'a erişim için kullanılıyor.
+application.properties dosyasına eklenmesi lazım:
+spring.cloud.vault.token=<root-token-buraya>
+spring.cloud.vault.uri=http://localhost:8200
+
+^Bunları yaptıktan sonra uygulama çalışır
+KrakenD Gateway: http://localhost:8081
+Grafana: http://localhost:3000 (default olarak username / password = admin / admin)
+Prometheus: http://localhost:9090
+Vault UI: http://localhost:8200/ui
+Spring Boot: http://localhost:8080
+
+
+## DATABASE
+spring.datasource.url=
+spring.datasource.username=
+spring.datasource.password=
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+application.properties dosyasındaki bu ayarları kendi db'nize uyarlayın.
+MySQL dışında başka bir db kullanılacaksa son tarafın değiştirilmesi gerekir.
+MySQL kullanılacaksa sadece ilk 3ü değiştirilir
+
+docker exec -it vault sh
+export VAULT_ADDR=http://127.0.0.1:8200
+vault operator unseal
+1 2 ve 3. key
+
+## BACKEND İLE İLGİLİ BAZI BİLGİLER
+Universal SOAP controller ve SoapInvoker dinamik olarak, ayrı ayrı endpoint ayarlamadan  API erişimi sağlar
 ##
 
 ## DOSYA İNDİRME
@@ -39,6 +94,12 @@ token oluşturulur.
 
 Gelen token Auth kısmında Baerer Token kısmına eklenmeli.
 Aşağıdaki URL'lere GET request atılmalı
+
+## FRONTEND GELİŞTİRİLDİKTEN SONRA UPDATE:
+Kayıt olduktan sonra mysql'de (veya hangi db kullanılıyorsa orada):
+UPDATE table
+SET role = "ADMIN" WHERE id = userid
+ile kullanıcı admin yapılmalı.
 -------------------------
 GLOBAL Endpoint:
 Girilen URL'ye göre dinamik olarak istek atılır ve cevap gelir
@@ -62,3 +123,6 @@ http://localhost:8081/single/number/15
 AGGREGATE
 http://localhost:8081/single/aggregate/TR/15
 -------------------------
+
+## EXTRA
+Spring Boot, Docker'in içine mountlanırsa dışarıya sadece tek port expose olur 
