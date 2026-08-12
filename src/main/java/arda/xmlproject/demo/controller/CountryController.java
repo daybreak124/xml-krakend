@@ -6,6 +6,7 @@ import org.oorsprong.websamples.TCountryInfo;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,6 +27,7 @@ public class CountryController {
 
 
     @GetMapping("/{code}/capital")
+    @PreAuthorize("hasAuthority('country')")
     public String capital(@PathVariable String code) {
         return countryInfo.getCapital(code);
     }
@@ -45,10 +47,10 @@ public class CountryController {
 
     // CACHE CONTROL HEADERLARI OLMADAN CACHELENMİYOR
 
+    @PreAuthorize("hasAuthority('country')")
     @GetMapping(value = "/{code}/full", produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<TCountryInfo> full(@PathVariable String code) {
         TCountryInfo result = countryInfo.getFullInfo(code);
-
 
 
         return ResponseEntity.ok()
@@ -61,6 +63,7 @@ public class CountryController {
 
 
     // JSON DÖNDÜRÜYOR
+    @PreAuthorize("hasAuthority('country')")
     @GetMapping(value = "/json/{code}/full")
     public ResponseEntity<TCountryInfo> fullJson(@PathVariable String code) {
         TCountryInfo result = countryInfo.getFullInfo(code);

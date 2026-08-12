@@ -6,6 +6,7 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +25,7 @@ public class NumberController {
         this.numberConversionInfo = numberConversionInfo;
     }
 
-
+    @PreAuthorize("hasAuthority('number')")
     @GetMapping(value = "/{code}", produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<NumberToWordsResponse> full(@PathVariable int code) {
 
@@ -42,6 +43,7 @@ public class NumberController {
 
 
     // JSON DÖNDÜR
+    @PreAuthorize("hasAuthority('number')")
     @GetMapping(value = "/json/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<NumberToWordsResponse> fullJson(@PathVariable int code) {
 
