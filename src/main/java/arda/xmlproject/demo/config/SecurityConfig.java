@@ -15,11 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-
-
     // Spring sadece method seviyesinde güvenlik için kullanılacağı için bunlar kapalı
-
-    // 8080e erişim buradan kapatılabiliyorsa kapatılmalı
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
