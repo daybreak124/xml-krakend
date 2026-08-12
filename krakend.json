@@ -4,7 +4,23 @@
   "port": 8081,
   "timeout": "5s",
   "extra_config": {
-
+    "router": {
+      "return_error_msg": true
+    },
+    "plugin/http-server": {
+      "name": [
+        "ip-filter"
+      ],
+      "ip-filter": {
+        "allow": true,
+        "CIDR": [
+          "192.168.0.0/24",
+          "172.17.2.56/32",
+          "10.0.0.0/16",
+          "127.0.0.1"
+        ]
+      }
+    },
     "telemetry/metrics": {
       "collection_time": "30s",
       "proxy_disabled": false,
@@ -13,25 +29,37 @@
       "endpoint_disabled": false,
       "listen_address": ":8082"
     },
-
+    "telemetry/opencensus": {
+      "exporters": {
+        "prometheus": {
+          "port": 9091,
+          "namespace": "krakend"
+        }
+      }
+    },
     "security/cors": {
       "allow_origins": [
-        "*"
+        "http://localhost:8080",
+        "http://localhost:8081"
       ],
       "allow_methods": [
         "GET",
         "HEAD",
-        "POST"
+        "POST",
+        "OPTIONS"
       ],
       "expose_headers": [
         "Content-Length",
-        "Content-Type"
+        "Content-Type",
+        "X-User-Id"
       ],
       "allow_headers": [
-        "Accept-Language"
+        "Accept-Language",
+        "Authorization",
+        "Content-Type"
       ],
       "max_age": "12h",
-      "allow_credentials": false,
+      "allow_credentials": true,
       "debug": false
     },
     "security/bot-detector": {
@@ -55,20 +83,227 @@
   },
   "endpoints": [
     {
-      "endpoint": "/global/{service}/{operation}/{param}",
-      "@comment": "GLOBAL endpoint. Hem sayı hem country için",
-      "output_encoding": "xml",
+      "endpoint": "/css/{file}",
       "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "url_pattern": "/css/{file}",
+          "method": "GET",
+          "encoding": "no-op",
+          "host": [
+            "http://host.docker.internal:8080"
+          ]
+        }
+      ]
+    },
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "url_pattern": "/",
+          "method": "GET",
+          "encoding": "no-op",
+          "host": [
+            "http://host.docker.internal:8080"
+          ]
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users",
+      "method": "GET",
+      "output_encoding": "json-collection",
+      "input_headers": ["Authorization", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin", "user_adm"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 500,
+          "client_capacity": 500,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/users",
+          "method": "GET",
+          "encoding": "json",
+          "is_collection": true,
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-user-get-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users/{id}",
+      "method": "GET",
+      "output_encoding": "json",
+      "input_headers": ["Authorization", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin", "user_adm"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 500,
+          "client_capacity": 500,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/users/{id}",
+          "method": "GET",
+          "encoding": "json",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-user-get-by-id-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users",
+      "method": "POST",
+      "output_encoding": "json",
       "input_headers": [
-        "id-header"
+        "Content-Type"
       ],
       "extra_config": {
         "qos/ratelimit/router": {
-          "max_rate": 10000,
-          "every": "10m",
-          "client_max_rate": 2500,
+          "max_rate": 500,
+          "every": "1m",
+          "client_max_rate": 20,
           "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/users",
+          "method": "POST",
+          "encoding": "json",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "backend/http": {
+              "return_error_code": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-user-post-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users/{id}",
+      "method": "PATCH",
+      "output_encoding": "json",
+      "input_headers": ["Authorization", "Content-Type", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin", "user_adm"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
         },
+        "qos/ratelimit/router": {
+          "client_max_rate": 500,
+          "client_capacity": 500,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/users/{id}",
+          "method": "PATCH",
+          "encoding": "json",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-user-patch-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users/{id}",
+      "method": "DELETE",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "x-rate-tier"],
+      "extra_config": {
         "auth/validator": {
           "alg": "HS384",
           "jwk_local_path": "keys.json",
@@ -78,14 +313,132 @@
             "admin"
           ],
           "propagate_claims": [
-            [
-              "id",
-              "id-header"
-            ]
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 5000,
+          "client_capacity": 5000,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/users/{id}",
+          "method": "DELETE",
+          "encoding": "no-op",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-user-delete-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/auth/login",
+      "method": "POST",
+      "input_headers": ["Content-Type"],
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "url_pattern": "/auth/login",
+          "method": "POST",
+          "encoding": "json",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "backend/http": {
+              "return_error_code": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-login-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/auth/refresh-token",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["Content-Type", "Cookie"],
+      "backend": [
+        {
+          "url_pattern": "/auth/refresh-token",
+          "method": "POST",
+          "encoding": "json",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-refresh-token-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/global/{service}/{operation}/{param}",
+      "output_encoding": "xml",
+      "method": "GET",
+      "input_headers": ["Authorization", "id-header", "x-rate-tier"],
+      "input_query_strings": ["fields"],
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 5000,
+          "client_capacity": 5000,
+          "every": "10m",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        },
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
           ]
         },
         "modifier/lua-proxy": {
-          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/global/{service}/{operation}/{param}');"
+          "allow_open_libs": true,
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/country/{code}');",
+          "post": "filterFields(request.load(), response.load())",
+          "sources": [
+            "./lua/field_filter.lua"
+          ]
         }
       },
       "backend": [
@@ -97,8 +450,28 @@
             "http://host.docker.internal:8080"
           ],
           "extra_config": {
+            "proxy": {
+              "flatmap_filter": [
+                {
+                  "type": "del",
+                  "args": [
+                    "TCountryInfo.scurrencyISOCode"
+                  ]
+                }
+              ]
+            },
             "qos/http-cache": {
               "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-universal-solo-endpoint",
+              "log_status_change": true
             }
           }
         }
@@ -106,36 +479,36 @@
     },
     {
       "endpoint": "/globaldouble/{service}/{operation}/{param1}/{param2}",
-      "@comment": "GLOBAL endpoint. Çift parametreliler için",
       "output_encoding": "xml",
       "method": "GET",
-      "input_headers": [
-        "id-header"
-      ],
+      "input_headers": ["Authorization", "id-header", "x-rate-tier"],
+      "input_query_strings": ["fields"],
       "extra_config": {
         "qos/ratelimit/router": {
-          "max_rate": 10000,
+          "client_max_rate": 5000,
+          "client_capacity": 5000,
           "every": "10m",
-          "client_max_rate": 2500,
-          "strategy": "ip"
+          "strategy": "header",
+          "key": "x-rate-tier"
         },
         "auth/validator": {
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
           "roles_key": "roles",
-          "roles": [
-            "admin"
-          ],
+          "roles": ["admin"],
           "propagate_claims": [
-            [
-              "id",
-              "id-header"
-            ]
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
           ]
         },
         "modifier/lua-proxy": {
-          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/globaldouble/{service}/{operation}/{param1}/{param2}');"
+          "allow_open_libs": true,
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/country/{code}');",
+          "post": "filterFields(request.load(), response.load())",
+          "sources": [
+            "./lua/field_filter.lua"
+          ]
         }
       },
       "backend": [
@@ -149,6 +522,16 @@
           "extra_config": {
             "qos/http-cache": {
               "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-universal-doubleparam-endpoint",
+              "log_status_change": true
             }
           }
         }
@@ -156,36 +539,36 @@
     },
     {
       "endpoint": "/global/aggregate/{service1}/{operation1}/{param1}/{service2}/{operation2}/{param2}",
-      "@comment": "",
       "method": "GET",
       "output_encoding": "xml",
-      "input_headers": [
-        "id-header"
-      ],
+      "input_headers": ["Authorization", "id-header", "x-rate-tier"],
+      "input_query_strings": ["fields"],
       "extra_config": {
         "qos/ratelimit/router": {
-          "max_rate": 10000,
+          "client_max_rate": 5000,
+          "client_capacity": 5000,
           "every": "10m",
-          "client_max_rate": 2500,
-          "strategy": "ip"
+          "strategy": "header",
+          "key": "x-rate-tier"
         },
         "auth/validator": {
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
           "roles_key": "roles",
-          "roles": [
-            "admin"
-          ],
+          "roles": ["admin"],
           "propagate_claims": [
-            [
-              "id",
-              "id-header"
-            ]
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
           ]
         },
         "modifier/lua-proxy": {
-          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/global/aggregate/{service1}/{operation1}/{param1}/{service2}/{operation2}/{param2}');"
+          "allow_open_libs": true,
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/country/{code}');",
+          "post": "filterFields(request.load(), response.load())",
+          "sources": [
+            "./lua/field_filter.lua"
+          ]
         }
       },
       "backend": [
@@ -199,6 +582,16 @@
           "extra_config": {
             "qos/http-cache": {
               "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-global-aggregate1-endpoint",
+              "log_status_change": true
             }
           }
         },
@@ -212,6 +605,16 @@
           "extra_config": {
             "qos/http-cache": {
               "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-global-aggregate2-endpoint",
+              "log_status_change": true
             }
           }
         }
@@ -219,36 +622,36 @@
     },
     {
       "endpoint": "/single/country/{code}",
-      "@comment": "Endpointi backendde belirlenmiş spesifik api için. Hızlı",
       "output_encoding": "xml",
       "method": "GET",
-      "input_headers": [
-        "id-header"
-      ],
+      "input_headers": ["Authorization", "id-header", "x-rate-tier"],
+      "input_query_strings": ["fields"],
       "extra_config": {
         "qos/ratelimit/router": {
-          "max_rate": 10000,
+          "client_max_rate": 500,
+          "client_capacity": 500,
           "every": "10m",
-          "client_max_rate": 2500,
-          "strategy": "ip"
+          "strategy": "header",
+          "key": "x-rate-tier"
         },
         "auth/validator": {
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
           "roles_key": "roles",
-          "roles": [
-            "country"
-          ],
+          "roles": ["country"],
           "propagate_claims": [
-            [
-              "id",
-              "id-header"
-            ]
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
           ]
         },
         "modifier/lua-proxy": {
-          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/country/{code}');"
+          "allow_open_libs": true,
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/country/{code}');",
+          "post": "filterFields(request.load(), response.load())",
+          "sources": [
+            "./lua/field_filter.lua"
+          ]
         }
       },
       "backend": [
@@ -262,6 +665,26 @@
           "extra_config": {
             "qos/http-cache": {
               "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "proxy": {
+              "flatmap_filter": [
+                {
+                  "type": "del",
+                  "args": [
+                    "TCountryInfo.scurrencyISOCode"
+                  ]
+                }
+              ]
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-country-endpoint",
+              "log_status_change": true
             }
           }
         }
@@ -269,36 +692,36 @@
     },
     {
       "endpoint": "/single/number/{code}",
-      "@comment": "Endpointi backendde belirlenmiş spesifik api için. Hızlı",
       "method": "GET",
       "output_encoding": "xml",
-      "input_headers": [
-        "id-header"
-      ],
+      "input_headers": ["Authorization", "id-header", "x-rate-tier"],
+      "input_query_strings": ["fields"],
       "extra_config": {
         "qos/ratelimit/router": {
-          "max_rate": 10000,
+          "client_max_rate": 500,
+          "client_capacity": 500,
           "every": "10m",
-          "client_max_rate": 2500,
-          "strategy": "ip"
+          "strategy": "header",
+          "key": "x-rate-tier"
         },
         "auth/validator": {
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
           "roles_key": "roles",
-          "roles": [
-            "number"
-          ],
+          "roles": ["number"],
           "propagate_claims": [
-            [
-              "id",
-              "id-header"
-            ]
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
           ]
         },
         "modifier/lua-proxy": {
-          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/number/{code}');"
+          "allow_open_libs": true,
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/country/{code}');",
+          "post": "filterFields(request.load(), response.load())",
+          "sources": [
+            "./lua/field_filter.lua"
+          ]
         }
       },
       "backend": [
@@ -312,6 +735,16 @@
           "extra_config": {
             "qos/http-cache": {
               "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-number-endpoint",
+              "log_status_change": true
             }
           }
         }
@@ -319,36 +752,36 @@
     },
     {
       "endpoint": "/single/aggregate/{country}/{number}",
-      "@comment": "Single aggregate",
       "method": "GET",
       "output_encoding": "xml",
-      "input_headers": [
-        "id-header"
-      ],
+      "input_headers": ["Authorization", "id-header", "x-rate-tier"],
+      "input_query_strings": ["fields"],
       "extra_config": {
         "qos/ratelimit/router": {
-          "max_rate": 10000,
+          "client_max_rate": 5000,
+          "client_capacity": 5000,
           "every": "10m",
-          "client_max_rate": 2500,
-          "strategy": "ip"
+          "strategy": "header",
+          "key": "x-rate-tier"
         },
         "auth/validator": {
           "alg": "HS384",
           "jwk_local_path": "keys.json",
           "disable_jwk_security": true,
           "roles_key": "roles",
-          "roles": [
-            "admin"
-          ],
+          "roles": ["admin"],
           "propagate_claims": [
-            [
-              "id",
-              "id-header"
-            ]
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
           ]
         },
         "modifier/lua-proxy": {
-          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/aggregate/{country}/{number}');"
+          "allow_open_libs": true,
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/country/{code}');",
+          "post": "filterFields(request.load(), response.load())",
+          "sources": [
+            "./lua/field_filter.lua"
+          ]
         }
       },
       "backend": [
@@ -362,6 +795,16 @@
           "extra_config": {
             "qos/http-cache": {
               "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-numbercountry-aggregate1-endpoint",
+              "log_status_change": true
             }
           }
         },
@@ -375,6 +818,397 @@
           "extra_config": {
             "qos/http-cache": {
               "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-numbercountry-aggregate2-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users-products/{id}/xml",
+      "input_query_strings": ["fields"],
+      "method": "GET",
+      "output_encoding": "xml",
+      "input_headers": ["Authorization", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "modifier/lua-proxy": {
+          "allow_open_libs": true,
+          "pre": "local r = request.load(); local userId = r:headers('id-header'); print('user=' .. tostring(userId) .. ' endpoint=/single/country/{code}');",
+          "post": "filterFields(request.load(), response.load())",
+          "sources": [
+            "./lua/field_filter.lua"
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 5000,
+          "client_capacity": 5000,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "url_pattern": "/api/users/{id}/xml",
+          "method": "GET",
+          "encoding": "xml",
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "backend/http": {
+              "return_error_code": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-user-get-with-filter-endpoint",
+              "log_status_change": true
+            }
+          }
+        },
+        {
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "url_pattern": "/api/products/{id}/xml",
+          "method": "GET",
+          "encoding": "xml",
+          "extra_config": {
+            "qos/http-cache": {
+              "shared": true
+            },
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "backend/http": {
+              "return_error_code": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-product-get-with-filter-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products",
+      "method": "GET",
+      "output_encoding": "json-collection",
+      "input_headers": ["Authorization", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin", "products_adm", "products", "products_get"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 500,
+          "client_capacity": 500,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/products",
+          "method": "GET",
+          "encoding": "json",
+          "is_collection": true,
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-product-get-all-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products/{id}",
+      "method": "GET",
+      "output_encoding": "json",
+      "input_headers": ["Authorization", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin", "products_adm", "products", "products_get"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 500,
+          "client_capacity": 500,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/products/{id}",
+          "method": "GET",
+          "encoding": "json",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-product-get-by-id-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products",
+      "method": "POST",
+      "output_encoding": "json",
+      "input_headers": ["Authorization", "Content-Type", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin", "products_adm", "products_post"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 500,
+          "client_capacity": 500,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/products",
+          "method": "POST",
+          "encoding": "json",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "backend/http": {
+              "return_error_code": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-product-post-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products/{id}",
+      "method": "PUT",
+      "output_encoding": "json",
+      "input_headers": ["Authorization", "Content-Type", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin", "products_adm", "products_patch"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 500,
+          "client_capacity": 500,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/products/{id}",
+          "method": "PUT",
+          "encoding": "json",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-product-put-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products/{id}",
+      "method": "PATCH",
+      "output_encoding": "json",
+      "input_headers": ["Authorization", "Content-Type", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin", "products_adm", "products_patch"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 500,
+          "client_capacity": 500,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/products/{id}",
+          "method": "PATCH",
+          "encoding": "json",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-product-patch-endpoint",
+              "log_status_change": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products/{id}",
+      "method": "DELETE",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "x-rate-tier"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS384",
+          "jwk_local_path": "keys.json",
+          "disable_jwk_security": true,
+          "roles_key": "roles",
+          "roles": ["admin", "products_adm", "products_del"],
+          "propagate_claims": [
+            ["id", "id-header"],
+            ["tier", "x-rate-tier"]
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 500,
+          "client_capacity": 500,
+          "every": "1h",
+          "strategy": "header",
+          "key": "x-rate-tier"
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/products/{id}",
+          "method": "DELETE",
+          "encoding": "no-op",
+          "host": [
+            "http://host.docker.internal:8080"
+          ],
+          "extra_config": {
+            "proxy/forward_headers": {
+              "allow_all": true
+            },
+            "qos/circuit-breaker": {
+              "interval": 60,
+              "timeout": 10,
+              "max_errors": 5000,
+              "name": "cb-product-delete-endpoint",
+              "log_status_change": true
             }
           }
         }
