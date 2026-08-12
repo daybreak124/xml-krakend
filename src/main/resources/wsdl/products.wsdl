@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://example.com/products"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  targetNamespace="http://example.com/products">
+
+    <wsdl:types>
+        <xsd:schema targetNamespace="http://example.com/products">
+
+            <!-- İSTEK 1: ID ile Ürün Getir -->
+            <xsd:element name="getProductRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:long"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- CEVAP 1 -->
+            <xsd:element name="getProductResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="product" type="tns:productInfo"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- ÜRÜN TANIMI (10 Kolon Şemaya Birebir Uygun) -->
+            <xsd:complexType name="productInfo">
+                <xsd:sequence>
+                    <xsd:element name="id" type="xsd:long"/>
+                    <xsd:element name="productName" type="xsd:string"/>
+                    <xsd:element name="category" type="xsd:string"/>
+                    <xsd:element name="price" type="xsd:decimal"/>
+                    <xsd:element name="stockQuantity" type="xsd:int"/>
+                    <xsd:element name="sku" type="xsd:string"/>
+                    <xsd:element name="brand" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="isActive" type="xsd:boolean"/>
+                    <xsd:element name="createdAt" type="xsd:dateTime" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+        </xsd:schema>
+    </wsdl:types>
+
+    <!-- MESAJ TANIMLARI -->
+    <wsdl:message name="getProductRequest">
+        <wsdl:part name="parameters" element="tns:getProductRequest"/>
+    </wsdl:message>
+    <wsdl:message name="getProductResponse">
+        <wsdl:part name="parameters" element="tns:getProductResponse"/>
+    </wsdl:message>
+
+    <!-- PORT TYPE (İşlem Tanımları) -->
+    <wsdl:portType name="ProductsPort">
+        <wsdl:operation name="getProduct">
+            <wsdl:input message="tns:getProductRequest"/>
+            <wsdl:output message="tns:getProductResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <!-- BINDING (SOAP Bağlantı Tipi) -->
+    <wsdl:binding name="ProductsPortBinding" type="tns:ProductsPort">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="getProduct">
+            <soap:operation soapAction="http://example.com/products/getProduct"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <!-- SERVICE (Servis Adresi) -->
+    <wsdl:service name="ProductsService">
+        <wsdl:port name="ProductsPort" binding="tns:ProductsPortBinding">
+            <soap:address location="http://localhost:8080/ws/products"/>
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>
