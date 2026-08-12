@@ -39,7 +39,6 @@
     },
     "security/cors": {
       "allow_origins": [
-        "http://localhost:8080",
         "http://localhost:8081"
       ],
       "allow_methods": [
@@ -92,7 +91,7 @@
           "method": "GET",
           "encoding": "no-op",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ]
         }
       ]
@@ -107,7 +106,7 @@
           "method": "GET",
           "encoding": "no-op",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ]
         }
       ]
@@ -144,7 +143,7 @@
           "encoding": "json",
           "is_collection": true,
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -192,7 +191,7 @@
           "method": "GET",
           "encoding": "json",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -230,7 +229,7 @@
           "method": "POST",
           "encoding": "json",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -281,7 +280,7 @@
           "method": "PATCH",
           "encoding": "json",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -331,7 +330,7 @@
           "method": "DELETE",
           "encoding": "no-op",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -359,7 +358,7 @@
           "method": "POST",
           "encoding": "json",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -390,7 +389,7 @@
           "method": "POST",
           "encoding": "json",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -447,7 +446,7 @@
           "method": "GET",
           "encoding": "xml",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy": {
@@ -517,7 +516,7 @@
           "method": "GET",
           "encoding": "xml",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "qos/http-cache": {
@@ -577,7 +576,7 @@
           "method": "GET",
           "encoding": "xml",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "qos/http-cache": {
@@ -600,7 +599,7 @@
           "method": "GET",
           "encoding": "xml",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "qos/http-cache": {
@@ -660,7 +659,7 @@
           "method": "GET",
           "encoding": "xml",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "qos/http-cache": {
@@ -730,7 +729,7 @@
           "method": "GET",
           "encoding": "xml",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "qos/http-cache": {
@@ -790,7 +789,7 @@
           "method": "GET",
           "encoding": "xml",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "qos/http-cache": {
@@ -813,7 +812,7 @@
           "method": "GET",
           "encoding": "xml",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "qos/http-cache": {
@@ -870,7 +869,7 @@
       "backend": [
         {
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "url_pattern": "/api/users/{id}/xml",
           "method": "GET",
@@ -896,7 +895,7 @@
         },
         {
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "url_pattern": "/api/products/{id}/xml",
           "method": "GET",
@@ -954,7 +953,7 @@
           "encoding": "json",
           "is_collection": true,
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -1002,7 +1001,7 @@
           "method": "GET",
           "encoding": "json",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -1050,7 +1049,7 @@
           "method": "POST",
           "encoding": "json",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -1101,7 +1100,7 @@
           "method": "PUT",
           "encoding": "json",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -1149,7 +1148,7 @@
           "method": "PATCH",
           "encoding": "json",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {
@@ -1197,7 +1196,7 @@
           "method": "DELETE",
           "encoding": "no-op",
           "host": [
-            "http://host.docker.internal:8080"
+            "http://spring-boot:8080"
           ],
           "extra_config": {
             "proxy/forward_headers": {

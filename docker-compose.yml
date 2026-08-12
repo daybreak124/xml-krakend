@@ -1,4 +1,13 @@
 services:
+  spring-boot:
+    build: .
+    container_name: spring-app
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    expose:
+      - "8080"
+
+
   krakend:
     image: devopsfaith/krakend
     container_name: krakend

@@ -43,7 +43,6 @@ KrakenD Gateway: http://localhost:8081
 Grafana: http://localhost:3000 (default olarak username / password = admin / admin)
 Prometheus: http://localhost:9090
 Vault UI: http://localhost:8200/ui
-Spring Boot: http://localhost:8080
 
 
 ## DATABASE
@@ -77,24 +76,6 @@ soap.services.{}.portMethod=<port döndüren, constructor ismi>
 ##
 
 
-## KULLANIM ##
-Postman - POST request
-http://localhost:8080/auth/login
-Body:
-{
-"username": "aşağıdaki 3ünden biri:",
-"password": "username ile aynı"
-}
-* abuzer524 = admin
-* sabri524 = country/number yetkileri
-* abuzittin524 = yetkisiz user
-
-gönderilen kişinin bilgilerine göre databasedeki "permission"lara göre
-token oluşturulur.
-
-Gelen token Auth kısmında Baerer Token kısmına eklenmeli.
-Aşağıdaki URL'lere GET request atılmalı
-
 ## FRONTEND GELİŞTİRİLDİKTEN SONRA UPDATE:
 Kayıt olduktan sonra mysql'de (veya hangi db kullanılıyorsa orada):
 UPDATE table
@@ -125,4 +106,5 @@ http://localhost:8081/single/aggregate/TR/15
 -------------------------
 
 ## EXTRA
-Spring Boot, Docker'in içine mountlanırsa dışarıya sadece tek port expose olur 
+Spring Boot, Docker'in içine mountlanırsa dışarıya sadece tek port expose olur
+Backenddeki her değişiklikte maalesef docker compose down ve docker compose up --build gerekir
