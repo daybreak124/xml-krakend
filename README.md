@@ -28,15 +28,16 @@ vault operator unseal   # 3. key
 
 JWT secret key Vault'a kaydedilir:
 vault kv put -mount=secret demo \
-security.jwt.secret-key="BURAYA_SECRET_KEY"
+security.jwt.secret-key="SECRET_KEY_BURAYA"
 
 Kontrol etmek için: vault kv get -mount=secret demo
 
 
 vault operator init çıktısındaki Initial Root Token, Spring Boot tarafında Vault'a erişim için kullanılıyor.
 application.properties dosyasına eklenmesi lazım:
-spring.cloud.vault.token=<root-token-buraya>
-spring.cloud.vault.uri=http://localhost:8200
+Proje kök dizininde .env dosyasına:
+VAULT_TOKEN=VAULT_TOKEN_BURAYA(hvs.**********...)
+koyulmalı
 
 ^Bunları yaptıktan sonra uygulama çalışır
 KrakenD Gateway: http://localhost:8081
@@ -51,7 +52,7 @@ spring.datasource.username=
 spring.datasource.password=
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
-application.properties dosyasındaki bu ayarları kendi db'nize uyarlayın.
+application.properties dosyasındaki bu ayarları kendi db'nize uyarlayın
 MySQL dışında başka bir db kullanılacaksa son tarafın değiştirilmesi gerekir.
 MySQL kullanılacaksa sadece ilk 3ü değiştirilir
 
@@ -105,6 +106,7 @@ AGGREGATE
 http://localhost:8081/single/aggregate/TR/15
 -------------------------
 
-## EXTRA
-Spring Boot, Docker'in içine mountlanırsa dışarıya sadece tek port expose olur
+## UPDATELEME
 Backenddeki her değişiklikte maalesef docker compose down ve docker compose up --build gerekir
+Sadece spring de buildlenirse olur
+(docker compose build spring-boot veya docker compose up --build spring-boot)
