@@ -89,6 +89,22 @@ dependencies {
     // Source: https://mvnrepository.com/artifact/org.modelmapper/modelmapper
     implementation("org.modelmapper:modelmapper:3.2.6")
 
+    // Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security
+    implementation("org.springframework.boot:spring-boot-starter-security:4.1.0")
+
+    // Source: https://mvnrepository.com/artifact/org.springframework.security/spring-security-core
+    implementation("org.springframework.security:spring-security-core:7.1.0")
+
+    implementation 'jakarta.xml.soap:jakarta.xml.soap-api:3.0.2'
+    implementation 'com.sun.xml.messaging.saaj:saaj-impl:3.0.4'
+
+    // Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation
+    implementation("org.springframework.boot:spring-boot-starter-validation:4.1.0")
+
+
+    // Source: https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-vault-config
+    implementation("org.springframework.cloud:spring-cloud-starter-vault-config:5.0.2")
+
 }
 
 wsdl2java {
