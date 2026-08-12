@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://example.com/users"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  targetNamespace="http://example.com/users">
+
+    <wsdl:types>
+        <xsd:schema targetNamespace="http://example.com/users">
+
+            <!-- İSTEK 1: ID ile getir -->
+            <xsd:element name="getUserRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:long"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- CEVAP 1 -->
+            <xsd:element name="getUserResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="user" type="tns:userInfo"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- KULLANICI TANIMI (İstediğin her şey dahil) -->
+            <xsd:complexType name="userInfo">
+                <xsd:sequence>
+                    <xsd:element name="id" type="xsd:long"/>
+                    <xsd:element name="ssn" type="xsd:long"/>          <!-- SSN EKLENDİ -->
+                    <xsd:element name="username" type="xsd:string"/>
+                    <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="lastName" type="xsd:string"/>
+                    <xsd:element name="role" type="xsd:string"/>
+                    <xsd:element name="permissions" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+                    <xsd:element name="accountCreatedAt" type="xsd:dateTime" minOccurs="0"/>
+                    <xsd:element name="lastAccessAt" type="xsd:dateTime" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+    </wsdl:types>
+
+    <!-- MESAJ TANIMLARI -->
+    <wsdl:message name="getUserRequest">
+        <wsdl:part name="parameters" element="tns:getUserRequest"/>
+    </wsdl:message>
+    <wsdl:message name="getUserResponse">
+        <wsdl:part name="parameters" element="tns:getUserResponse"/>
+    </wsdl:message>
+
+    <!-- PORT TYPE (İşlem Tanımları) -->
+    <wsdl:portType name="UsersPort">
+        <wsdl:operation name="getUser">
+            <wsdl:input message="tns:getUserRequest"/>
+            <wsdl:output message="tns:getUserResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <!-- BINDING (SOAP Bağlantı Tipi) -->
+    <wsdl:binding name="UsersPortBinding" type="tns:UsersPort">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="getUser">
+            <soap:operation soapAction=""/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <!-- SERVICE (Servis Adresi) -->
+    <wsdl:service name="UsersService">
+        <wsdl:port name="UsersPort" binding="tns:UsersPortBinding">
+            <soap:address location="http://localhost:8080/ws"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
